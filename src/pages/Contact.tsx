@@ -43,14 +43,14 @@ export default function Contact() {
             <div className="rounded-xl border-glow bg-card/60 p-6 md:p-8 space-y-6">
               <h2 className="text-2xl font-display font-bold">Reach Out</h2>
 
-              <a href="https://t.me/aaaa" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors">
+              <a href="https://t.me/Stranger3145" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors">
                 <Send className="h-5 w-5 text-primary" />
-                <span className="text-sm">t.me/aaaa</span>
+                <span className="text-sm">t.me/Stranger3145</span>
               </a>
 
-              <a href="mailto:contact@fernlink.org" className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors">
+              <a href="mailto:oanthony590@gmail.com" className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors">
                 <Mail className="h-5 w-5 text-primary" />
-                <span className="text-sm">contact@fernlink.org</span>
+                <span className="text-sm">Mail Me</span>
               </a>
             </div>
 
@@ -58,13 +58,13 @@ export default function Contact() {
             <div className="mt-6 rounded-xl border-glow bg-card/60 p-6">
               <h3 className="font-display font-semibold mb-4">Join the Community</h3>
               <div className="flex gap-4">
-                <a href="https://discord.gg/fernlink" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                {/* <a href="https://discord.gg/fernlink" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
                   <MessageCircle className="h-5 w-5" /> Discord
                 </a>
                 <a href="https://twitter.com/fernlink" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
                   <Twitter className="h-5 w-5" /> Twitter/X
-                </a>
-                <a href="https://github.com/fernlink" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                </a> */}
+                <a href="https://github.com/OnoseAnthony/fernlink-network" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
                   <Github className="h-5 w-5" /> GitHub
                 </a>
               </div>

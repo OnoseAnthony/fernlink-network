@@ -1,9 +1,5 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Github, Twitter, MessageCircle, ChevronDown } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Github, Twitter, MessageCircle, ChevronDown, Send, Mail } from "lucide-react";
 
 const faqs = [
   {
@@ -29,14 +25,7 @@ const faqs = [
 ];
 
 export default function Contact() {
-  const { toast } = useToast();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    toast({ title: "Message sent!", description: "We'll get back to you soon." });
-    (e.target as HTMLFormElement).reset();
-  };
 
   return (
     <div className="mesh-bg">
@@ -49,25 +38,20 @@ export default function Contact() {
         </p>
 
         <div className="grid lg:grid-cols-2 gap-12">
-          {/* Form */}
+          {/* Contact Info */}
           <div className="animate-fade-up" style={{ animationDelay: "0.15s" }}>
-            <div className="rounded-xl border-glow bg-card/60 p-6 md:p-8">
-              <h2 className="text-2xl font-display font-bold mb-6">Send a Message</h2>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label htmlFor="name" className="text-sm font-medium mb-1.5 block">Name</label>
-                  <Input id="name" placeholder="Your name" required className="bg-secondary/50 border-border/50" />
-                </div>
-                <div>
-                  <label htmlFor="email" className="text-sm font-medium mb-1.5 block">Email</label>
-                  <Input id="email" type="email" placeholder="you@example.com" required className="bg-secondary/50 border-border/50" />
-                </div>
-                <div>
-                  <label htmlFor="message" className="text-sm font-medium mb-1.5 block">Message</label>
-                  <Textarea id="message" placeholder="Tell us what's on your mind..." rows={5} required className="bg-secondary/50 border-border/50" />
-                </div>
-                <Button type="submit" className="w-full">Send Message</Button>
-              </form>
+            <div className="rounded-xl border-glow bg-card/60 p-6 md:p-8 space-y-6">
+              <h2 className="text-2xl font-display font-bold">Reach Out</h2>
+
+              <a href="https://t.me/aaaa" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors">
+                <Send className="h-5 w-5 text-primary" />
+                <span className="text-sm">t.me/aaaa</span>
+              </a>
+
+              <a href="mailto:contact@fernlink.org" className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors">
+                <Mail className="h-5 w-5 text-primary" />
+                <span className="text-sm">contact@fernlink.org</span>
+              </a>
             </div>
 
             {/* Social */}

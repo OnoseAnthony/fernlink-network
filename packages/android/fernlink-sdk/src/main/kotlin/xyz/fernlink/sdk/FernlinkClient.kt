@@ -1,26 +1,25 @@
 package xyz.fernlink.sdk
 
 import kotlinx.coroutines.*
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.json.JSONArray
 import org.json.JSONObject
+import xyz.fernlink.sdk.ble.FernlinkBleService
 
 /**
  * FernlinkClient is the main entry point for the Fernlink Android SDK.
  *
- * It coordinates peer communication, proof collection, and consensus
- * evaluation using the native Rust core (fernlink-core) via JNI.
- *
- * Usage:
+ * Single-device (RPC-only) usage:
  * ```kotlin
- * val client = FernlinkClient(FernlinkClientConfig(
- *     rpcEndpoint = "https://api.mainnet-beta.solana.com"
- * ))
+ * val client = FernlinkClient(FernlinkClientConfig(rpcEndpoint = "https://api.mainnet-beta.solana.com"))
  * client.start()
- *
  * val result = client.verifyTransaction(txSignature)
- * if (result.settled) Log.d("Fernlink", "Status: ${result.status}")
+ * ```
+ *
+ * With BLE mesh (bind FernlinkBleService first, then attach):
+ * ```kotlin
+ * client.attachBleService(bleService)   // call from onServiceConnected
+ * val result = client.verifyTransaction(txSignature)  // now collects peer proofs over BLE
  * ```
  */
 class FernlinkClient(private val config: FernlinkClientConfig) {
@@ -38,25 +37,39 @@ class FernlinkClient(private val config: FernlinkClientConfig) {
     val publicKey: String
         get() = keypairBytes.drop(32).joinToString("") { "%02x".format(it) }
 
-    private var started = false
+    private var started    = false
+    private var bleService: FernlinkBleService? = null
 
     fun start() { started = true }
     fun stop()  { started = false; scope.cancel() }
 
     /**
+     * Attach an already-started FernlinkBleService.
+     * Once attached, verifyTransaction() will also broadcast over BLE and
+     * collect peer proofs before running consensus.
+     */
+    fun attachBleService(service: FernlinkBleService) {
+        bleService = service
+        service.startMesh(keypairBytes.sliceArray(0..31))
+    }
+
+    fun detachBleService() {
+        bleService?.stopMesh()
+        bleService = null
+    }
+
+    val connectedPeerCount: Int get() = bleService?.connectedPeerCount ?: 0
+
+    /**
      * Verify a Solana transaction.
      *
-     * Queries the configured RPC endpoint, signs a proof with this device's
-     * Ed25519 key, and returns the consensus result.
-     *
-     * In the full mesh implementation this broadcasts over BLE and collects
-     * proofs from nearby peers before applying consensus rules. This release
-     * demonstrates the complete cryptographic flow end-to-end.
+     * If a BleService is attached and peers are connected, broadcasts a
+     * verification request over BLE and collects peer proofs before consensus.
+     * Falls back to a single local proof when no peers respond.
      *
      * @param txSignature  Base58-encoded transaction signature
      * @param commitment   Required commitment level (default: CONFIRMED)
-     * @param timeoutMs    Max time to wait for mesh proofs (default: 15s)
-     * @return ConsensusResult with settled status and verified proof count
+     * @param timeoutMs    Max time to wait for BLE peer proofs (default: 15s)
      */
     suspend fun verifyTransaction(
         txSignature: String,
@@ -73,6 +86,7 @@ class FernlinkClient(private val config: FernlinkClientConfig) {
             TxStatus.UNKNOWN   -> 2
         }
 
+        // Sign our own local proof
         val proofJson = FernlinkJni.signProof(
             keypairSeed = keypairBytes.sliceArray(0..31),
             txSignature  = txSignature,
@@ -82,11 +96,25 @@ class FernlinkClient(private val config: FernlinkClientConfig) {
             errorCode    = 0,
         ) ?: throw RuntimeException("Failed to sign proof")
 
-        // Verify our own proof before trusting it
         val valid = FernlinkJni.verifyProof(proofJson)
         if (!valid) throw RuntimeException("Self-signed proof failed verification")
 
-        val proofsArray = JSONArray().apply { put(JSONObject(proofJson)) }
+        // If BLE service is attached, broadcast to peers and wait for their proofs
+        val ble = bleService
+        if (ble != null && ble.connectedPeerCount > 0) {
+            ble.clearProofs()
+            ble.broadcastRequest(txSignature, statusByte, sigStatus.slot, sigStatus.blockTime)
+            delay(timeoutMs)
+
+            val consensusJson = ble.collectConsensusJson(config.minProofs)
+            if (consensusJson != null) {
+                return@withContext json.decodeFromString<ConsensusResult>(consensusJson)
+            }
+            // Fall through to single-proof consensus if BLE yielded nothing
+        }
+
+        // Single-proof consensus (local only)
+        val proofsArray  = JSONArray().apply { put(JSONObject(proofJson)) }
         val consensusJson = FernlinkJni.evaluateProofs(proofsArray.toString(), 1)
             ?: throw RuntimeException("Consensus evaluation failed")
 

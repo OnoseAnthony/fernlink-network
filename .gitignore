@@ -18,6 +18,10 @@ packages/fernlink-core/target/
 # Package lock files (keep package-lock.json, ignore bun lock in packages)
 packages/*/node_modules/
 
+# Claude Code internal files
+CLAUDE.md
+.claude/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

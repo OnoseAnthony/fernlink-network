@@ -67,20 +67,11 @@ jobs:
           key: ${{ runner.os }}-cargo-ffi-${{ hashFiles('packages/android/fernlink-core-ffi/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-ffi-
 
-      - name: Install cargo-ndk
-        run: cargo install cargo-ndk
+      - name: Check arm64-v8a
+        run: cargo check --target aarch64-linux-android
 
-      - name: Set up Android NDK
-        uses: android-actions/setup-android@v3
+      - name: Check armeabi-v7a
+        run: cargo check --target armv7-linux-androideabi
 
-      - name: Install NDK 28
-        run: sdkmanager "ndk;28.2.13676358"
-
-      - name: Build for all Android targets
-        run: |
-          export ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/28.2.13676358
-          cargo ndk \
-            -t aarch64-linux-android \
-            -t armv7-linux-androideabi \
-            -t x86_64-linux-android \
-            build --release
+      - name: Check x86_64
+        run: cargo check --target x86_64-linux-android

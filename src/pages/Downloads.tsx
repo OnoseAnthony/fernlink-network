@@ -71,7 +71,7 @@ export default function Downloads() {
           </div>
           <div>
             <div className="font-mono text-[10px] text-[#166534] uppercase tracking-widest mb-2">Try the live devnet demo</div>
-            <CodeLine cmd="npx @fernlink/demo" />
+            <CodeLine cmd="npx fernlink-demo" />
           </div>
           <div>
             <div className="font-mono text-[10px] text-[#166534] uppercase tracking-widest mb-3">Verify a transaction via the mesh</div>

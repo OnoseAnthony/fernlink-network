@@ -11,7 +11,7 @@ const faqs = [
   },
   {
     q: "What happens when there's no internet?",
-    a: "Devices can rely on cached proofs from the mesh and peer consensus. The store-and-forward layer buffers requests and retries automatically when connectivity returns.",
+    a: "The device doesn't wait — it hops. A verification request broadcasts over BLE or WiFi to nearby peers, travelling hop by hop through the mesh until it reaches a device that does have connectivity. That device hits the Solana RPC, signs the proof, and returns it back through the same path. As long as one device within mesh range has internet, every device in the network can verify transactions. If no connected device is reachable at all, the store-and-forward layer queues the request and retries as peers come and go.",
   },
   {
     q: "Which transports are supported?",

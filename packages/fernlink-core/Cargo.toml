@@ -1,0 +1,29 @@
+[package]
+name = "fernlink-core"
+version = "0.1.0"
+edition = "2021"
+description = "Core cryptographic primitives and protocol implementation for the Fernlink mesh verification network"
+license = "Apache-2.0"
+repository = "https://github.com/OnoseAnthony/fernlink-network"
+keywords = ["solana", "blockchain", "mesh", "p2p", "verification"]
+categories = ["cryptography", "network-programming"]
+
+[dependencies]
+ed25519-dalek = { version = "2.1", features = ["rand_core"] }
+rand = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde-big-array = "0.5"
+sha2 = "0.10"
+hex = "0.4"
+bs58 = "0.5"
+uuid = { version = "1.0", features = ["v4", "serde"] }
+thiserror = "1.0"
+reqwest = { version = "0.11", features = ["json", "blocking"] }
+
+[dev-dependencies]
+tokio = { version = "1.0", features = ["full"] }
+
+[lib]
+name = "fernlink_core"
+path = "src/lib.rs"

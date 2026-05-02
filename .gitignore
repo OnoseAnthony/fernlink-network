@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Rust build artifacts
+packages/fernlink-core/target/
+
+# Package lock files (keep package-lock.json, ignore bun lock in packages)
+packages/*/node_modules/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

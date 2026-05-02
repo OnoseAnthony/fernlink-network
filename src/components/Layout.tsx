@@ -41,7 +41,7 @@ function Header() {
         </nav>
 
         <div className="hidden md:block">
-          <a href="https://github.com/fernlink" target="_blank" rel="noopener noreferrer">
+          <a href="https://github.com/OnoseAnthony/fernlink-network" target="_blank" rel="noopener noreferrer">
             <Button size="sm" className="gap-2">
               <Github className="h-4 w-4" /> Star on GitHub
             </Button>
@@ -103,7 +103,7 @@ function Footer() {
             <h4 className="font-display text-sm font-semibold mb-3">Resources</h4>
             <div className="flex flex-col gap-2 text-sm text-muted-foreground">
               <Link to="/downloads" className="hover:text-foreground transition-colors">Downloads</Link>
-              <a href="https://github.com/fernlink" className="hover:text-foreground transition-colors" target="_blank" rel="noopener noreferrer">GitHub</a>
+              <a href="https://github.com/OnoseAnthony/fernlink-network" className="hover:text-foreground transition-colors" target="_blank" rel="noopener noreferrer">GitHub</a>
               <Link to="/contact" className="hover:text-foreground transition-colors">Contact</Link>
             </div>
           </div>
@@ -111,7 +111,7 @@ function Footer() {
           <div>
             <h4 className="font-display text-sm font-semibold mb-3">Community</h4>
             <div className="flex items-center gap-3 mt-2">
-              <a href="https://github.com/fernlink" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors" aria-label="GitHub">
+              <a href="https://github.com/OnoseAnthony/fernlink-network" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors" aria-label="GitHub">
                 <Github className="h-5 w-5" />
               </a>
               <a href="https://twitter.com/fernlink" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors" aria-label="Twitter">

@@ -1,5 +1,5 @@
 {
-  "name": "@fernlink/sdk",
+  "name": "fernlink-sdk",
   "version": "0.1.0",
   "description": "TypeScript SDK for the Fernlink decentralized Solana transaction verification mesh",
   "main": "dist/index.js",

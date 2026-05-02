@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const GITHUB = "https://github.com/OnoseAnthony/fernlink-network";
 
@@ -11,9 +12,9 @@ const sdks = [
 ];
 
 const blogPosts = [
-  { title: "Introducing Fernlink: A New Paradigm for Solana Verification", date: "Coming Soon" },
-  { title: "How BLE Mesh Networks Can Reduce RPC Costs by 80%",            date: "Coming Soon" },
-  { title: "Building Offline-First Solana Applications",                    date: "Coming Soon" },
+  { title: "Introducing Fernlink: A New Paradigm for Solana Verification", date: "2026-05-02", href: "/blog/introducing-fernlink" },
+  { title: "How BLE Mesh Networks Can Reduce RPC Costs by 80%",            date: "Coming Soon", href: null },
+  { title: "Building Offline-First Solana Applications",                    date: "Coming Soon", href: null },
 ];
 
 function CopyButton({ text }: { text: string }) {
@@ -198,17 +199,21 @@ console.log(result.status, result.slot, result.proofCount);`}
           // BLOG_AND_UPDATES
         </div>
         <div className="bg-black border border-[#064e3b] terminal-border">
-          {blogPosts.map((post, i) => (
-            <div
-              key={post.title}
-              className={`flex items-center justify-between px-6 py-4 hover:bg-[#22C55E]/5 transition-colors ${
-                i < blogPosts.length - 1 ? "border-b border-[#064e3b]" : ""
-              }`}
-            >
-              <span className="font-mono text-sm text-[#22C55E]">{post.title}</span>
-              <span className="font-mono text-[10px] text-[#166534] uppercase shrink-0 ml-6">{post.date}</span>
-            </div>
-          ))}
+          {blogPosts.map((post, i) => {
+            const row = (
+              <div className={`flex items-center justify-between px-6 py-4 transition-colors ${
+                post.href ? "hover:bg-[#22C55E]/5 cursor-pointer" : "opacity-60"
+              } ${i < blogPosts.length - 1 ? "border-b border-[#064e3b]" : ""}`}>
+                <span className="font-mono text-sm text-[#22C55E]">{post.title}</span>
+                <span className="font-mono text-[10px] text-[#166534] uppercase shrink-0 ml-6">{post.date}</span>
+              </div>
+            );
+            return post.href ? (
+              <Link key={post.title} to={post.href}>{row}</Link>
+            ) : (
+              <div key={post.title}>{row}</div>
+            );
+          })}
         </div>
       </section>
     </div>

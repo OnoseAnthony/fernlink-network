@@ -1,6 +1,6 @@
 package xyz.fernlink.sdk.ble
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import org.json.JSONArray
@@ -10,33 +10,33 @@ import xyz.fernlink.sdk.FernlinkJni
 /**
  * Wires the GATT server and client together with the Fernlink crypto layer.
  *
- * Incoming REQUEST payloads (from remote centrals) are treated as verification
- * requests: the router signs a proof via the Rust JNI core and sends it back
- * to all subscribed centrals via the PROOF characteristic.
+ * Incoming REQUEST payloads trigger signProof via JNI; the result is sent back
+ * as a PROOF notification to all subscribed centrals.
  *
- * Incoming PROOF payloads (notified by remote peripherals) are queued for the
- * owning FernlinkClient to collect and feed into consensus.
+ * Outbound requests are forwarded to peers if connected, or buffered in
+ * [proofStore] for store-and-forward delivery when a peer reconnects.
+ *
+ * Incoming PROOF notifications are queued for FernlinkClient to collect.
  */
 internal class BleMessageRouter(
     private val server: GattServerManager,
     private val client: GattClientManager,
+    private val proofStore: ProofStore,
     private val keypairSeed: ByteArray,
     private val scope: CoroutineScope,
 ) {
-    private val _collectedProofs = ArrayDeque<String>()
-    val collectedProofs: List<String> get() = _collectedProofs.toList()
+    private val collectedProofsList = ArrayDeque<String>()
+    val collectedProofs: List<String> get() = collectedProofsList.toList()
 
-    fun clearProofs() = _collectedProofs.clear()
+    fun clearProofs() = collectedProofsList.clear()
 
     fun start() {
-        // Remote peer wrote a REQUEST → sign a proof and notify back
         server.incomingRequests
             .onEach { payload -> handleIncomingRequest(payload) }
             .launchIn(scope)
 
-        // Remote peripheral notified a PROOF → buffer it for consensus
         client.incomingProofs
-            .onEach { payload -> _collectedProofs.add(String(payload, Charsets.UTF_8)) }
+            .onEach { payload -> collectedProofsList.add(String(payload, Charsets.UTF_8)) }
             .launchIn(scope)
     }
 
@@ -67,6 +67,12 @@ internal class BleMessageRouter(
         slot: Long,
         blockTime: Long,
     ) {
+        if (client.connectedPeerCount == 0) {
+            // No peers right now — buffer for store-and-forward
+            proofStore.enqueue(ProofStore.PendingRequest(txSignature, statusByte, slot, blockTime))
+            return
+        }
+
         val payload = JSONObject().apply {
             put("txSignature", txSignature)
             put("statusByte",  statusByte.toInt())

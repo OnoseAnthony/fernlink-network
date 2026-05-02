@@ -9,7 +9,8 @@
     "build": "tsc",
     "dev": "tsx src/ble-demo.ts",
     "peripheral": "tsx src/run-peripheral.ts",
-    "central": "tsx src/run-central.ts"
+    "central": "tsx src/run-central.ts",
+    "test": "vitest run src/simulator.test.ts"
   },
   "keywords": ["solana", "fernlink", "ble", "bluetooth", "mesh"],
   "license": "Apache-2.0",
@@ -22,6 +23,7 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "tsx": "^4.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^2.0.0"
   }
 }

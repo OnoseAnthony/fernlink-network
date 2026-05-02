@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,47 +6,44 @@
 
 @layer base {
   :root {
-    --background: 150 20% 4%;
-    --foreground: 140 20% 92%;
+    --background: 0 0% 0%;
+    --foreground: 142 71% 45%;
 
-    --card: 150 15% 8%;
-    --card-foreground: 140 20% 92%;
+    --card: 0 0% 2%;
+    --card-foreground: 142 71% 45%;
 
-    --popover: 150 15% 8%;
-    --popover-foreground: 140 20% 92%;
+    --popover: 0 0% 2%;
+    --popover-foreground: 142 71% 45%;
 
-    --primary: 130 60% 40%;
-    --primary-foreground: 150 20% 4%;
+    --primary: 142 71% 45%;
+    --primary-foreground: 151 86% 8%;
 
-    --secondary: 150 15% 14%;
-    --secondary-foreground: 140 20% 85%;
+    --secondary: 0 0% 6%;
+    --secondary-foreground: 142 71% 45%;
 
-    --muted: 150 10% 12%;
-    --muted-foreground: 140 10% 55%;
+    --muted: 0 0% 4%;
+    --muted-foreground: 140 52% 25%;
 
-    --accent: 175 60% 40%;
-    --accent-foreground: 150 20% 4%;
+    --accent: 142 71% 45%;
+    --accent-foreground: 151 86% 8%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 150 10% 16%;
-    --input: 150 10% 16%;
-    --ring: 130 60% 40%;
+    --border: 163 78% 16%;
+    --input: 163 78% 16%;
+    --ring: 142 71% 45%;
 
-    --radius: 0.75rem;
+    --radius: 0px;
 
-    --glow-primary: 0 0 40px hsl(130 60% 40% / 0.15);
-    --glow-accent: 0 0 40px hsl(175 60% 40% / 0.15);
-
-    --sidebar-background: 150 15% 6%;
-    --sidebar-foreground: 140 20% 85%;
-    --sidebar-primary: 130 60% 40%;
-    --sidebar-primary-foreground: 150 20% 4%;
-    --sidebar-accent: 150 15% 12%;
-    --sidebar-accent-foreground: 140 20% 85%;
-    --sidebar-border: 150 10% 16%;
-    --sidebar-ring: 130 60% 40%;
+    --sidebar-background: 0 0% 2%;
+    --sidebar-foreground: 142 71% 45%;
+    --sidebar-primary: 142 71% 45%;
+    --sidebar-primary-foreground: 151 86% 8%;
+    --sidebar-accent: 0 0% 6%;
+    --sidebar-accent-foreground: 142 71% 45%;
+    --sidebar-border: 163 78% 16%;
+    --sidebar-ring: 142 71% 45%;
   }
 }
 
@@ -56,42 +53,47 @@
   }
 
   body {
-    @apply bg-background text-foreground font-body antialiased;
+    @apply bg-black text-[#22C55E] font-mono antialiased overflow-x-hidden;
+    font-family: 'JetBrains Mono', monospace;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-display;
+  ::selection {
+    background: #22C55E;
+    color: #000000;
   }
 }
 
 @layer utilities {
+  .data-glow {
+    text-shadow: 0 0 15px rgba(34, 197, 94, 0.5);
+  }
+
+  .terminal-border {
+    border: 1px solid #064e3b;
+    box-shadow: inset 0 0 10px rgba(34, 197, 94, 0.05);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .terminal-border:hover {
+    border-color: #22C55E;
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+  }
+
+  .fern-glow {
+    box-shadow: 0 0 40px rgba(34, 197, 94, 0.1);
+  }
+
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
-  }
-
-  .glow-primary {
-    box-shadow: var(--glow-primary);
-  }
-
-  .glow-accent {
-    box-shadow: var(--glow-accent);
-  }
-
-  .mesh-bg {
-    background-image: 
-      radial-gradient(circle at 20% 50%, hsl(130 60% 40% / 0.06) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, hsl(175 60% 40% / 0.04) 0%, transparent 50%),
-      radial-gradient(circle at 50% 80%, hsl(130 60% 40% / 0.03) 0%, transparent 50%);
-  }
-
-  .border-glow {
-    @apply border border-primary/20;
-    box-shadow: inset 0 1px 0 0 hsl(130 60% 40% / 0.1);
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#22C55E] to-[#4ade80];
   }
 }
 
 @layer components {
   .section-container {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    @apply max-w-[1440px] mx-auto px-6;
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   }
 }

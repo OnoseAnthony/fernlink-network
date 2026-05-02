@@ -7,8 +7,8 @@ const GITHUB_ORG = "https://github.com/OnoseAnthony/fernlink-network";
 const sdks = [
   {
     platform: "TypeScript / Node.js",
-    pkg: "@fernlink/sdk",
-    install: "npm install @fernlink/sdk",
+    pkg: "fernlink-sdk",
+    install: "npm install fernlink-sdk",
     repo: `${GITHUB_ORG}/tree/main/packages/sdk`,
     status: "Available",
   },
@@ -82,14 +82,14 @@ export default function Downloads() {
               <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Install</p>
               <div className="flex items-center bg-secondary/60 rounded-lg px-4 py-3 font-mono text-sm">
                 <span className="text-primary mr-2">$</span>
-                <span>npm install @fernlink/sdk</span>
-                <CopyButton text="npm install @fernlink/sdk" />
+                <span>npm install fernlink-sdk</span>
+                <CopyButton text="npm install fernlink-sdk" />
               </div>
             </div>
             <div>
               <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Verify a transaction via the mesh</p>
               <pre className="bg-secondary/60 rounded-lg px-4 py-4 text-sm overflow-x-auto text-left leading-relaxed">
-{`import { FernlinkClient, SimulatedPeer } from "@fernlink/sdk";
+{`import { FernlinkClient, SimulatedPeer } from "fernlink-sdk";
 
 const fernlink = new FernlinkClient({
   rpcEndpoint: "https://api.mainnet-beta.solana.com",

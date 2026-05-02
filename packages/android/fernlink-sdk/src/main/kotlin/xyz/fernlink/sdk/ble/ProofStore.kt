@@ -12,9 +12,8 @@ internal class ProofStore {
 
     data class PendingRequest(
         val txSignature: String,
-        val statusByte: Byte,
-        val slot: Long,
-        val blockTime: Long,
+        val commitment: String = "confirmed",
+        val ttl: Int = 8,
     )
 
     private val queue = ConcurrentLinkedQueue<PendingRequest>()
@@ -23,11 +22,9 @@ internal class ProofStore {
     val isEmpty: Boolean get() = queue.isEmpty()
 
     fun enqueue(req: PendingRequest) {
-        // Cap at 64 entries to bound memory use on long-offline devices
         if (queue.size < 64) queue.add(req)
     }
 
-    /** Drain and return all buffered requests, clearing the queue. */
     fun drain(): List<PendingRequest> {
         val out = mutableListOf<PendingRequest>()
         while (true) out.add(queue.poll() ?: break)

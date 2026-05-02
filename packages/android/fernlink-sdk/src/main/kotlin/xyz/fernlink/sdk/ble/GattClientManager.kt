@@ -6,12 +6,13 @@ import android.content.Context
 import android.os.ParcelUuid
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
+import org.json.JSONObject
 
 /**
  * Scans for Fernlink peripherals, connects, and subscribes to PROOF notifications.
  *
  * Incoming proof fragments are reassembled and emitted on [incomingProofs].
- * Call [sendRequest] to write a fragmented verification request to a connected peer.
+ * Call [sendRequest] to write a fragmented verification request to all connected peers.
  * When a new peer connects, any requests buffered in [proofStore] are drained first.
  */
 internal class GattClientManager(
@@ -59,7 +60,7 @@ internal class GattClientManager(
             fragments.forEach { frag ->
                 char.value = frag
                 gatt.writeCharacteristic(char)
-                Thread.sleep(20) // respect GATT write pacing
+                Thread.sleep(20)
             }
         }
     }
@@ -108,7 +109,6 @@ internal class GattClientManager(
             ccc?.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
             ccc?.let { gatt.writeDescriptor(it) }
 
-            // Drain any requests that arrived while we had no peers
             drainStoreTo(gatt)
         }
 
@@ -133,11 +133,10 @@ internal class GattClientManager(
         val char = gatt.getService(BleUuids.FERNLINK_SERVICE)
             ?.getCharacteristic(BleUuids.CHAR_REQUEST) ?: return
         pending.forEach { req ->
-            val payload = org.json.JSONObject().apply {
+            val payload = JSONObject().apply {
                 put("txSignature", req.txSignature)
-                put("statusByte",  req.statusByte.toInt())
-                put("slot",        req.slot)
-                put("blockTime",   req.blockTime)
+                put("commitment",  req.commitment)
+                put("ttl",         req.ttl)
             }.toString().toByteArray(Charsets.UTF_8)
 
             BleFragmentation.fragment(payload).forEach { frag ->

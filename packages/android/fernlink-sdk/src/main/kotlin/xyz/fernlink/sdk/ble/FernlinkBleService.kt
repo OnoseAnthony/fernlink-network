@@ -65,10 +65,10 @@ class FernlinkBleService : Service() {
 
     // ── Public API (called by FernlinkClient after binding) ───────────────────
 
-    fun startMesh(keypairSeed: ByteArray) {
+    fun startMesh(keypairSeed: ByteArray, rpcEndpoint: String) {
         if (initialised) return
         this.keypairSeed = keypairSeed.copyOf()
-        router = BleMessageRouter(server, client, store, this.keypairSeed, scope)
+        router = BleMessageRouter(server, client, store, this.keypairSeed, rpcEndpoint, scope)
         server.start()
         client.startScanning()
         router.start()
@@ -89,9 +89,9 @@ class FernlinkBleService : Service() {
     val pendingRequestCount: Int
         get() = if (initialised) store.size else 0
 
-    fun broadcastRequest(txSignature: String, statusByte: Byte, slot: Long, blockTime: Long) {
+    fun broadcastRequest(txSignature: String, commitment: String = "confirmed", ttl: Int = 8) {
         if (!initialised) return
-        router.broadcastRequest(txSignature, statusByte, slot, blockTime)
+        router.broadcastRequest(txSignature, commitment, ttl)
     }
 
     fun collectConsensusJson(minProofs: Int): String? =

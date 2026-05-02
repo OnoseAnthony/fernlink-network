@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "xyz.fernlink.sdk"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 26

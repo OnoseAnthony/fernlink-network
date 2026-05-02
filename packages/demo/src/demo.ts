@@ -189,8 +189,6 @@ async function main() {
 
   step(2, "Sending SOL transfer on devnet...");
 
-  // Well-known confirmed devnet tx used as fallback when airdrop unavailable
-  const FALLBACK_TX = "5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQo";
   let txSignature: string;
 
   if (airdropOk) {
@@ -205,10 +203,21 @@ async function main() {
     ok(`Signature: ${txSignature}`);
     info(`Explorer:  https://explorer.solana.com/tx/${txSignature}?cluster=devnet`);
   } else {
-    txSignature = FALLBACK_TX;
-    info(`Using fallback devnet tx: ${txSignature}`);
-    info("Explorer: https://explorer.solana.com/tx/" + txSignature + "?cluster=devnet");
-    ok("Signature loaded — mesh verification proceeds against real devnet state");
+    // Fetch a live recent devnet transaction so the mesh verification shows real status
+    info("Fetching a recent confirmed devnet transaction for the mesh to verify...");
+    const res = await fetch(RPC_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0", id: 1,
+        method: "getSignaturesForAddress",
+        params: ["11111111111111111111111111111111", { limit: 1 }],
+      }),
+    });
+    const json = await res.json() as { result: Array<{ signature: string }> };
+    txSignature = json.result[0].signature;
+    ok(`Live devnet tx: ${txSignature}`);
+    info(`Explorer: https://explorer.solana.com/tx/${txSignature}?cluster=devnet`);
   }
 
   step(3, "Initialising Fernlink mesh (3 simulated BLE/WiFi peers)...");

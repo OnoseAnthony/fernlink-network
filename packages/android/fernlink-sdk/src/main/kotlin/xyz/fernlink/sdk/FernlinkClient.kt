@@ -19,8 +19,14 @@ import xyz.fernlink.sdk.ble.FernlinkBleService
  * With BLE mesh (bind FernlinkBleService first, then attach):
  * ```kotlin
  * client.attachBleService(bleService)   // call from onServiceConnected
- * val result = client.verifyTransaction(txSignature)  // now collects peer proofs over BLE
+ * val result = client.verifyTransaction(txSignature)
  * ```
+ *
+ * When BLE peers are connected, verifyTransaction() broadcasts the request into
+ * the mesh. Peers independently call Solana RPC, sign the result, and return
+ * cryptographic proofs. If a peer has no internet it forwards the request further
+ * through the mesh (multi-hop) until a device with connectivity is reached.
+ * Your device only falls back to direct RPC if no peers respond within timeoutMs.
  */
 class FernlinkClient(private val config: FernlinkClientConfig) {
 
@@ -43,14 +49,12 @@ class FernlinkClient(private val config: FernlinkClientConfig) {
     fun start() { started = true }
     fun stop()  { started = false; scope.cancel() }
 
-    /**
-     * Attach an already-started FernlinkBleService.
-     * Once attached, verifyTransaction() will also broadcast over BLE and
-     * collect peer proofs before running consensus.
-     */
     fun attachBleService(service: FernlinkBleService) {
         bleService = service
-        service.startMesh(keypairBytes.sliceArray(0..31))
+        service.startMesh(
+            keypairSeed = keypairBytes.sliceArray(0..31),
+            rpcEndpoint = config.rpcEndpoint,
+        )
     }
 
     fun detachBleService() {
@@ -63,13 +67,13 @@ class FernlinkClient(private val config: FernlinkClientConfig) {
     /**
      * Verify a Solana transaction.
      *
-     * If a BleService is attached and peers are connected, broadcasts a
-     * verification request over BLE and collects peer proofs before consensus.
-     * Falls back to a single local proof when no peers respond.
+     * If BLE peers are connected, broadcasts a request to the mesh. Each peer
+     * independently verifies via its own Solana RPC connection and returns a
+     * signed proof. Peers without internet forward the request further (multi-hop).
+     * Consensus requires [config.minProofs] matching proofs.
      *
-     * @param txSignature  Base58-encoded transaction signature
-     * @param commitment   Required commitment level (default: CONFIRMED)
-     * @param timeoutMs    Max time to wait for BLE peer proofs (default: 15s)
+     * Falls back to a direct local RPC call if no peer proofs arrive within
+     * [timeoutMs] or no BLE service is attached.
      */
     suspend fun verifyTransaction(
         txSignature: String,
@@ -78,15 +82,30 @@ class FernlinkClient(private val config: FernlinkClientConfig) {
     ): ConsensusResult = withContext(Dispatchers.IO) {
         check(started) { "Call client.start() before verifyTransaction()" }
 
-        val sigStatus = rpc.getSignatureStatus(txSignature)
+        val ble = bleService
+        if (ble != null && ble.connectedPeerCount > 0) {
+            ble.clearProofs()
+            ble.broadcastRequest(
+                txSignature = txSignature,
+                commitment  = commitment.name.lowercase(),
+                ttl         = 8,
+            )
+            delay(timeoutMs)
 
+            val consensusJson = ble.collectConsensusJson(config.minProofs)
+            if (consensusJson != null) {
+                return@withContext json.decodeFromString<ConsensusResult>(consensusJson)
+            }
+            // Peers didn't respond in time — fall through to direct RPC
+        }
+
+        // Direct RPC fallback: this device calls Solana itself
+        val sigStatus = rpc.getSignatureStatus(txSignature)
         val statusByte: Byte = when (sigStatus.status) {
             TxStatus.CONFIRMED -> 0
             TxStatus.FAILED    -> 1
             TxStatus.UNKNOWN   -> 2
         }
-
-        // Sign our own local proof
         val proofJson = FernlinkJni.signProof(
             keypairSeed = keypairBytes.sliceArray(0..31),
             txSignature  = txSignature,
@@ -96,28 +115,9 @@ class FernlinkClient(private val config: FernlinkClientConfig) {
             errorCode    = 0,
         ) ?: throw RuntimeException("Failed to sign proof")
 
-        val valid = FernlinkJni.verifyProof(proofJson)
-        if (!valid) throw RuntimeException("Self-signed proof failed verification")
-
-        // If BLE service is attached, broadcast to peers and wait for their proofs
-        val ble = bleService
-        if (ble != null && ble.connectedPeerCount > 0) {
-            ble.clearProofs()
-            ble.broadcastRequest(txSignature, statusByte, sigStatus.slot, sigStatus.blockTime)
-            delay(timeoutMs)
-
-            val consensusJson = ble.collectConsensusJson(config.minProofs)
-            if (consensusJson != null) {
-                return@withContext json.decodeFromString<ConsensusResult>(consensusJson)
-            }
-            // Fall through to single-proof consensus if BLE yielded nothing
-        }
-
-        // Single-proof consensus (local only)
-        val proofsArray  = JSONArray().apply { put(JSONObject(proofJson)) }
+        val proofsArray   = JSONArray().apply { put(JSONObject(proofJson)) }
         val consensusJson = FernlinkJni.evaluateProofs(proofsArray.toString(), 1)
             ?: throw RuntimeException("Consensus evaluation failed")
-
         json.decodeFromString<ConsensusResult>(consensusJson)
     }
 }

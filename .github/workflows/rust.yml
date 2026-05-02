@@ -1,0 +1,86 @@
+name: Rust
+
+on:
+  push:
+    paths:
+      - "packages/fernlink-core/**"
+      - "packages/android/fernlink-core-ffi/**"
+      - ".github/workflows/rust.yml"
+  pull_request:
+    paths:
+      - "packages/fernlink-core/**"
+      - "packages/android/fernlink-core-ffi/**"
+      - ".github/workflows/rust.yml"
+
+jobs:
+  test-core:
+    name: fernlink-core tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/fernlink-core
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            packages/fernlink-core/target
+          key: ${{ runner.os }}-cargo-core-${{ hashFiles('packages/fernlink-core/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-core-
+
+      - name: Build
+        run: cargo build --all-features
+
+      - name: Test
+        run: cargo test --all-features
+
+  check-ffi:
+    name: fernlink-core-ffi check (Android targets)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/android/fernlink-core-ffi
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain + Android targets
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            packages/android/fernlink-core-ffi/target
+          key: ${{ runner.os }}-cargo-ffi-${{ hashFiles('packages/android/fernlink-core-ffi/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-ffi-
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk
+
+      - name: Set up Android NDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK 28
+        run: sdkmanager "ndk;28.2.13676358"
+
+      - name: Build for all Android targets
+        run: |
+          export ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/28.2.13676358
+          cargo ndk \
+            -t aarch64-linux-android \
+            -t armv7-linux-androideabi \
+            -t x86_64-linux-android \
+            build --release

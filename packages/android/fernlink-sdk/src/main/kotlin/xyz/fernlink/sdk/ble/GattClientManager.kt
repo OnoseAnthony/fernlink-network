@@ -12,14 +12,18 @@ import kotlinx.coroutines.flow.SharedFlow
  *
  * Incoming proof fragments are reassembled and emitted on [incomingProofs].
  * Call [sendRequest] to write a fragmented verification request to a connected peer.
+ * When a new peer connects, any requests buffered in [proofStore] are drained first.
  */
-internal class GattClientManager(private val context: Context) {
+internal class GattClientManager(
+    private val context: Context,
+    private val proofStore: ProofStore,
+) {
 
     private val _incomingProofs = MutableSharedFlow<ByteArray>(extraBufferCapacity = 32)
     val incomingProofs: SharedFlow<ByteArray> = _incomingProofs
 
-    private val connections   = mutableMapOf<String, BluetoothGatt>()
-    private val reassemblers  = mutableMapOf<String, BleFragmentation.Reassembler>()
+    private val connections  = mutableMapOf<String, BluetoothGatt>()
+    private val reassemblers = mutableMapOf<String, BleFragmentation.Reassembler>()
 
     private val manager get() =
         context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -103,6 +107,9 @@ internal class GattClientManager(private val context: Context) {
             val ccc = proofChar.getDescriptor(BleUuids.DESCRIPTOR_CCC)
             ccc?.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
             ccc?.let { gatt.writeDescriptor(it) }
+
+            // Drain any requests that arrived while we had no peers
+            drainStoreTo(gatt)
         }
 
         override fun onCharacteristicChanged(
@@ -115,6 +122,29 @@ internal class GattClientManager(private val context: Context) {
             }
             val complete = reassembler.feed(characteristic.value) ?: return
             _incomingProofs.tryEmit(complete)
+        }
+    }
+
+    // ── Store-and-forward drain ───────────────────────────────────────────────
+
+    private fun drainStoreTo(gatt: BluetoothGatt) {
+        val pending = proofStore.drain()
+        if (pending.isEmpty()) return
+        val char = gatt.getService(BleUuids.FERNLINK_SERVICE)
+            ?.getCharacteristic(BleUuids.CHAR_REQUEST) ?: return
+        pending.forEach { req ->
+            val payload = org.json.JSONObject().apply {
+                put("txSignature", req.txSignature)
+                put("statusByte",  req.statusByte.toInt())
+                put("slot",        req.slot)
+                put("blockTime",   req.blockTime)
+            }.toString().toByteArray(Charsets.UTF_8)
+
+            BleFragmentation.fragment(payload).forEach { frag ->
+                char.value = frag
+                gatt.writeCharacteristic(char)
+                Thread.sleep(20)
+            }
         }
     }
 }

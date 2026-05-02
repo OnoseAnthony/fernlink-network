@@ -67,8 +67,8 @@ jobs:
       - name: Type-check
         run: npx tsc --noEmit
 
-  check-ble:
-    name: ble package type-check
+  test-ble-simulator:
+    name: BLE simulator tests + type-check
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -89,3 +89,6 @@ jobs:
 
       - name: Type-check
         run: npx tsc --noEmit
+
+      - name: Run simulator tests
+        run: npm test

@@ -35,14 +35,16 @@ class FernlinkBleService : Service() {
     internal lateinit var server: GattServerManager
     internal lateinit var client: GattClientManager
     internal lateinit var router: BleMessageRouter
+    internal lateinit var store:  ProofStore
 
     private var keypairSeed: ByteArray = ByteArray(32)
     private var initialised = false
 
     override fun onCreate() {
         super.onCreate()
+        store  = ProofStore()
         server = GattServerManager(applicationContext)
-        client = GattClientManager(applicationContext)
+        client = GattClientManager(applicationContext, store)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -66,7 +68,7 @@ class FernlinkBleService : Service() {
     fun startMesh(keypairSeed: ByteArray) {
         if (initialised) return
         this.keypairSeed = keypairSeed.copyOf()
-        router = BleMessageRouter(server, client, this.keypairSeed, scope)
+        router = BleMessageRouter(server, client, store, this.keypairSeed, scope)
         server.start()
         client.startScanning()
         router.start()
@@ -83,6 +85,9 @@ class FernlinkBleService : Service() {
 
     val connectedPeerCount: Int
         get() = if (initialised) client.connectedPeerCount else 0
+
+    val pendingRequestCount: Int
+        get() = if (initialised) store.size else 0
 
     fun broadcastRequest(txSignature: String, statusByte: Byte, slot: Long, blockTime: Long) {
         if (!initialised) return

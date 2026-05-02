@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="#0F1117">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🌿 Fernlink Demo"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="#22C55E"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Solana Transaction Verification via Ed25519 Mesh Proofs"
+        android:textSize="12sp"
+        android:textColor="#9CA3AF"
+        android:layout_marginBottom="24dp" />
+
+    <EditText
+        android:id="@+id/etSignature"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Transaction signature (leave blank for devnet sample)"
+        android:textColorHint="#6B7280"
+        android:textColor="#F9FAFB"
+        android:background="@android:color/transparent"
+        android:paddingVertical="12dp"
+        android:textSize="13sp"
+        android:inputType="text"
+        android:singleLine="true"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/btnVerify"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:text="Verify Transaction"
+        android:textColor="#FFFFFF"
+        android:backgroundTint="#16A34A"
+        android:layout_marginBottom="24dp" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#1A1F2E"
+        android:padding="12dp">
+
+        <TextView
+            android:id="@+id/tvLog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tap 'Verify Transaction' to begin...\n"
+            android:textColor="#D1FAE5"
+            android:fontFamily="monospace"
+            android:textSize="12sp"
+            android:lineSpacingExtra="4dp" />
+
+    </ScrollView>
+
+</LinearLayout>

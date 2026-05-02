@@ -1,0 +1,91 @@
+name: TypeScript SDK
+
+on:
+  push:
+    paths:
+      - "packages/sdk/**"
+      - "packages/demo/**"
+      - "packages/ble/**"
+      - ".github/workflows/sdk.yml"
+  pull_request:
+    paths:
+      - "packages/sdk/**"
+      - "packages/demo/**"
+      - "packages/ble/**"
+      - ".github/workflows/sdk.yml"
+
+jobs:
+  test-sdk:
+    name: fernlink-sdk tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sdk
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: packages/sdk/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+  check-demo:
+    name: demo CLI type-check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/demo
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: packages/demo/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+  check-ble:
+    name: ble package type-check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/ble
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: packages/ble/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Type-check
+        run: npx tsc --noEmit

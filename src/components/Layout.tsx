@@ -19,7 +19,7 @@ function Header() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-b border-[#064e3b] shadow-[0_0_20px_rgba(34,197,94,0.08)]">
       <div className="flex justify-between items-center w-full px-6 py-4 max-w-[1440px] mx-auto">
         <Link to="/" className="font-mono font-bold text-[#22C55E] tracking-[0.2em] text-xl data-glow">
-          FERNLINK_SYS
+          FERNLINK
         </Link>
 
         <div className="hidden md:flex items-center gap-8">

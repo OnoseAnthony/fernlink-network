@@ -11,7 +11,7 @@ const faqs = [
   },
   {
     q: "What happens when there's no internet?",
-    a: "The device doesn't wait — it hops. A verification request broadcasts over BLE or WiFi to nearby peers, travelling hop by hop through the mesh until it reaches a device that does have connectivity. That device hits the Solana RPC, signs the proof, and returns it back through the same path. As long as one device within mesh range has internet, every device in the network can verify transactions. If no connected device is reachable at all, the store-and-forward layer queues the request and retries as peers come and go.",
+    a: "If any directly connected peer has internet access, that peer verifies the transaction and returns a signed proof — your device never needs its own connection. If no connected peer has internet, the store-and-forward layer queues the request and retries automatically as peers come and go. Multi-hop routing — where a request travels through a chain of devices until it finds one with connectivity — is on the active roadmap and will extend coverage to fully offline mesh environments.",
   },
   {
     q: "Which transports are supported?",

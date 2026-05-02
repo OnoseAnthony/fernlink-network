@@ -13,7 +13,7 @@
         android:textSize="24sp"
         android:textStyle="bold"
         android:textColor="#22C55E"
-        android:layout_marginBottom="4dp" />
+        android:layout_marginBottom="2dp" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -21,7 +21,16 @@
         android:text="Solana Transaction Verification via Ed25519 Mesh Proofs"
         android:textSize="12sp"
         android:textColor="#9CA3AF"
-        android:layout_marginBottom="24dp" />
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/tvPeers"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="BLE: scanning…"
+        android:textSize="12sp"
+        android:textColor="#60A5FA"
+        android:layout_marginBottom="16dp" />
 
     <EditText
         android:id="@+id/etSignature"

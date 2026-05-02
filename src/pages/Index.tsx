@@ -53,7 +53,7 @@ export default function Index() {
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-medium mb-6 animate-fade-up">
               <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse-glow" />
-              Open Source · Solana Ecosystem
+              Open Source · Solana Ecosystem · SDK v0.1.0 live
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold leading-tight mb-6 animate-fade-up" style={{ animationDelay: "0.1s" }}>
               Decentralized Transaction Verification for{" "}
@@ -64,7 +64,7 @@ export default function Index() {
               and extend Solana&apos;s reach to every corner of the world.
             </p>
             <div className="flex flex-wrap gap-4 animate-fade-up" style={{ animationDelay: "0.3s" }}>
-              <a href="https://github.com/fernlink" target="_blank" rel="noopener noreferrer">
+              <a href="https://github.com/OnoseAnthony/fernlink-network" target="_blank" rel="noopener noreferrer">
                 <Button size="lg" className="gap-2">
                   Download SDK <ArrowRight className="h-4 w-4" />
                 </Button>

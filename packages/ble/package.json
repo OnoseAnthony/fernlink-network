@@ -1,0 +1,27 @@
+{
+  "name": "@fernlink/ble",
+  "version": "0.1.0",
+  "description": "BLE transport layer for the Fernlink mesh verification network",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/ble-demo.ts",
+    "peripheral": "tsx src/run-peripheral.ts",
+    "central": "tsx src/run-central.ts"
+  },
+  "keywords": ["solana", "fernlink", "ble", "bluetooth", "mesh"],
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@abandonware/bleno": "^0.6.1",
+    "@abandonware/noble": "^1.9.2-14",
+    "tweetnacl": "^1.0.3",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}

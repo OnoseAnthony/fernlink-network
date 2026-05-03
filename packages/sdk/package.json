@@ -22,7 +22,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/OnoseAnthony/fernlink-network"
+    "url": "https://github.com/Fernlink-Protocol/fernlink-network"
   },
   "dependencies": {
     "@solana/web3.js": "^1.98.0",

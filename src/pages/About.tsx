@@ -112,7 +112,7 @@ export default function About() {
           </p>
           <div className="mt-6 pt-6 border-t border-[#064e3b]">
             <a
-              href="https://github.com/OnoseAnthony/fernlink-network"
+              href="https://github.com/Fernlink-Protocol/fernlink-network"
               target="_blank"
               rel="noopener noreferrer"
               className="font-mono text-sm uppercase tracking-widest border border-[#22C55E] text-[#22C55E] px-6 py-3 inline-block hover:bg-[#22C55E] hover:text-black transition-all"

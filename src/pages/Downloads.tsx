@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
-const GITHUB = "https://github.com/OnoseAnthony/fernlink-network";
+const GITHUB = "https://github.com/Fernlink-Protocol/fernlink-network";
 
 const sdks = [
   { platform: "TypeScript / Node.js", pkg: "fernlink-sdk",    install: "npm install fernlink-sdk",   repo: `${GITHUB}/tree/main/packages/sdk`,            status: "Available" },

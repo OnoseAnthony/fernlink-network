@@ -201,7 +201,7 @@ export default function IntroducingFernlink() {
         {/* CTA */}
         <div className="mt-12 pt-8 border-t border-[#064e3b] flex flex-wrap gap-4">
           <a
-            href="https://github.com/OnoseAnthony/fernlink-network"
+            href="https://github.com/Fernlink-Protocol/fernlink-network"
             target="_blank"
             rel="noopener noreferrer"
             className="font-mono text-sm uppercase tracking-widest border border-[#22C55E] text-[#22C55E] px-5 py-2 inline-block hover:bg-[#22C55E] hover:text-black transition-all"

@@ -88,7 +88,7 @@ export default function Contact() {
 
           <div className="bg-black border border-[#064e3b] p-6 terminal-border">
             <a
-              href="https://github.com/OnoseAnthony/fernlink-network"
+              href="https://github.com/Fernlink-Protocol/fernlink-network"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-4 group"
@@ -96,7 +96,7 @@ export default function Contact() {
               <span className="material-symbols-outlined text-[#22C55E] group-hover:scale-110 transition-transform">code</span>
               <div>
                 <div className="font-mono text-[10px] uppercase text-[#166534] tracking-widest">GitHub</div>
-                <div className="font-mono text-sm text-[#22C55E]">OnoseAnthony/fernlink-network</div>
+                <div className="font-mono text-sm text-[#22C55E]">Fernlink-Protocol/fernlink-network</div>
               </div>
             </a>
           </div>

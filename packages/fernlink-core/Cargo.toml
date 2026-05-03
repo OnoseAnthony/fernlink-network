@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "Core cryptographic primitives and protocol implementation for the Fernlink mesh verification network"
 license = "Apache-2.0"
-repository = "https://github.com/OnoseAnthony/fernlink-network"
+repository = "https://github.com/Fernlink-Protocol/fernlink-network"
 keywords = ["solana", "blockchain", "mesh", "p2p", "verification"]
 categories = ["cryptography", "network-programming"]
 

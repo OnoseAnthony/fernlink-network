@@ -1,0 +1,33 @@
+[package]
+name = "fernlink-ble-desktop"
+version = "0.1.0"
+edition = "2021"
+description = "Cross-platform desktop BLE node for the Fernlink mesh verification network"
+license = "Apache-2.0"
+repository = "https://github.com/Fernlink-Protocol/fernlink-network"
+
+[[bin]]
+name = "fernlink-node"
+path = "src/main.rs"
+
+[dependencies]
+btleplug     = "0.11"
+tokio        = { version = "1", features = ["full"] }
+tokio-stream = "0.1"
+futures      = "0.3"
+serde        = { version = "1", features = ["derive"] }
+serde_json   = "1"
+uuid         = { version = "1", features = ["v4"] }
+reqwest      = { version = "0.11", features = ["json"] }
+anyhow       = "1"
+hex          = "0.4"
+clap         = { version = "4", features = ["derive"] }
+tracing      = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Core crypto + consensus (no rpc feature — we use async reqwest directly)
+fernlink-core = { path = "../fernlink-core", default-features = false }
+
+# Linux-only: peripheral (GATT server / advertising) support via BlueZ
+[target.'cfg(target_os = "linux")'.dependencies]
+bluer = { version = "0.17", features = ["full"] }

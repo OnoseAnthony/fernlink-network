@@ -77,8 +77,9 @@ export default function Index() {
           </h1>
 
           <p className="font-mono text-[#166534] text-lg mb-12 max-w-2xl mx-auto leading-relaxed">
-            A resilient, peer-to-peer verification layer that operates beyond traditional
-            infrastructure. Powered by organic growth protocols and cryptographic certainty.
+            A resilient, peer-to-peer verification layer that works beyond traditional
+            infrastructure. Devices share cryptographic proofs locally so the network
+            keeps running even when centralized services don't.
           </p>
 
           {/* Stats */}
@@ -209,7 +210,7 @@ export default function Index() {
             Ready to Build with Fernlink?
           </h2>
           <p className="font-mono text-[#166534] text-lg mb-10 max-w-2xl mx-auto">
-            Join the ecosystem that's bringing offline resilience and hyper-localized
+            Join the ecosystem that's bringing offline resilience and local-first
             verification to the Solana network.
           </p>
           <div className="flex flex-col md:flex-row gap-6 justify-center items-center">

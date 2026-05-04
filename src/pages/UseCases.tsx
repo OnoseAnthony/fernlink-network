@@ -10,7 +10,7 @@ const useCases = [
     icon: "public",
     code: "UC_002",
     title: "Emerging Markets",
-    desc: "Bring Solana to billions in regions with unreliable internet. Fernlink enables transaction verification via local BLE/WiFi meshes — no stable connection required.",
+    desc: "Bring Solana to billions in regions with unreliable internet. Fernlink enables transaction verification via local BLE meshes, even without a stable connection.",
     benefits: ["Offline-capable verification", "Low bandwidth usage", "Accessible to feature phones"],
   },
   {
@@ -56,7 +56,7 @@ export default function UseCases() {
           Use Cases
         </h1>
         <p className="font-mono text-[#166534] text-lg max-w-2xl leading-relaxed">
-          Fernlink creates positive network effects — every new device strengthens the mesh,
+          Fernlink creates positive network effects. Every new device strengthens the mesh,
           reducing costs and improving resilience for the entire Solana ecosystem.
         </p>
       </section>

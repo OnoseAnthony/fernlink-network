@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-
-const GITHUB = "https://github.com/Fernlink-Protocol/fernlink-network";
+import { GITHUB } from "@/lib/constants";
 
 const sdks = [
-  { platform: "TypeScript / Node.js", pkg: "fernlink-sdk",    install: "npm install fernlink-sdk",   repo: `${GITHUB}/tree/main/packages/sdk`,            status: "Available" },
-  { platform: "Rust Core",            pkg: "fernlink-core",   install: "cargo add fernlink-core",    repo: `${GITHUB}/tree/main/packages/fernlink-core`,  status: "Available" },
+  { platform: "TypeScript / Node.js", pkg: "fernlink-sdk",     install: "npm install fernlink-sdk",  repo: `${GITHUB}/tree/main/packages/sdk`,            status: "Available" },
+  { platform: "Rust Core",            pkg: "fernlink-core",    install: "cargo add fernlink-core",   repo: `${GITHUB}/tree/main/packages/fernlink-core`,  status: "Available" },
   { platform: "Android (Kotlin)",     pkg: "fernlink-android", install: null,                        repo: `${GITHUB}/tree/main/packages/android`,        status: "Available" },
-  { platform: "iOS (Swift)",          pkg: "fernlink-ios",    install: null,                         repo: null,                                           status: "In Development" },
-  { platform: "React Native",         pkg: "fernlink-rn",     install: null,                         repo: null,                                           status: "Planned" },
+  { platform: "iOS (Swift)",          pkg: "fernlink-ios",     install: null,                        repo: `${GITHUB}/tree/main/packages/ios`,            status: "Available" },
+  { platform: "Web (Browser)",        pkg: "fernlink-sdk",     install: "npm install fernlink-sdk",  repo: `${GITHUB}/tree/main/packages/sdk`,            status: "Available" },
+  { platform: "Desktop (Rust)",       pkg: "fernlink-node",    install: "cargo install fernlink-ble-desktop", repo: `${GITHUB}/tree/main/packages/ble-desktop`, status: "In Development" },
+  { platform: "React Native",         pkg: "fernlink-rn",      install: null,                        repo: null,                                           status: "Planned" },
 ];
 
 const blogPosts = [
@@ -122,7 +123,7 @@ console.log(result.status, result.slot, result.proofCount);`}
             <span className="material-symbols-outlined text-[#22C55E] text-4xl mb-4 block data-glow">code</span>
             <h2 className="font-mono font-semibold text-xl text-[#22C55E] mb-3">Source Code</h2>
             <p className="font-mono text-sm text-[#166534] mb-6 leading-relaxed">
-              Full monorepo — Rust core, TypeScript SDK, Android SDK, BLE transport,
+              Full monorepo: Rust core, TypeScript SDK, Android SDK, BLE transport,
               and devnet demo. Apache 2.0 licensed and open for contributions.
             </p>
             <a

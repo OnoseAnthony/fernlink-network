@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { X, Menu } from "lucide-react";
 import MatrixCanvas from "./MatrixCanvas";
+import { GITHUB } from "@/lib/constants";
 
 const navLinks = [
   { label: "[ NETWORK ]",  to: "/about" },
@@ -40,7 +41,7 @@ function Header() {
 
         <div className="hidden md:flex items-center gap-4">
           <a
-            href="https://github.com/Fernlink-Protocol/fernlink-network"
+            href={GITHUB}
             target="_blank"
             rel="noopener noreferrer"
             className="font-mono uppercase tracking-tighter text-sm bg-[#22C55E] text-black px-4 py-2 hover:bg-black hover:text-[#22C55E] border border-[#22C55E] transition-all duration-200 active:scale-95"
@@ -77,7 +78,7 @@ function Header() {
               </Link>
             ))}
             <a
-              href="https://github.com/Fernlink-Protocol/fernlink-network"
+              href={GITHUB}
               target="_blank"
               rel="noopener noreferrer"
               className="font-mono text-sm uppercase tracking-tighter text-black bg-[#22C55E] px-4 py-2 text-center mt-2"
@@ -108,12 +109,12 @@ function Footer() {
             <Link to="/docs" className="font-mono text-[10px] uppercase text-[#166534] hover:text-[#22C55E] hover:translate-x-1 transition-all">
               ./documentation
             </Link>
-            <a href="https://github.com/Fernlink-Protocol/fernlink-network" target="_blank" rel="noopener noreferrer" className="font-mono text-[10px] uppercase text-[#166534] hover:text-[#22C55E] hover:translate-x-1 transition-all">
+            <a href={GITHUB} target="_blank" rel="noopener noreferrer" className="font-mono text-[10px] uppercase text-[#166534] hover:text-[#22C55E] hover:translate-x-1 transition-all">
               ./whitepaper.pdf
             </a>
           </div>
           <div className="flex flex-col gap-2">
-            <a href="https://github.com/Fernlink-Protocol/fernlink-network" target="_blank" rel="noopener noreferrer" className="font-mono text-[10px] uppercase text-[#166534] hover:text-[#22C55E] hover:translate-x-1 transition-all">
+            <a href={GITHUB} target="_blank" rel="noopener noreferrer" className="font-mono text-[10px] uppercase text-[#166534] hover:text-[#22C55E] hover:translate-x-1 transition-all">
               ./github_repo
             </a>
             <Link to="/downloads" className="font-mono text-[10px] uppercase text-[#166534] hover:text-[#22C55E] hover:translate-x-1 transition-all">

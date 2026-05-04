@@ -8,6 +8,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import xyz.fernlink.sdk.FernlinkJni
 import xyz.fernlink.sdk.SolanaRpc
+import java.util.concurrent.ConcurrentLinkedQueue
 import xyz.fernlink.sdk.TxStatus
 
 /**
@@ -33,7 +34,7 @@ internal class BleMessageRouter(
     private val scope: CoroutineScope,
 ) {
     private val rpc = SolanaRpc(rpcEndpoint)
-    private val collectedProofsList = ArrayDeque<String>()
+    private val collectedProofsList = ConcurrentLinkedQueue<String>()
     val collectedProofs: List<String> get() = collectedProofsList.toList()
 
     fun clearProofs() = collectedProofsList.clear()

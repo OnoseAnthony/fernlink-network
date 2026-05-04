@@ -54,3 +54,10 @@ export interface PeerInfo {
   publicKey: string;
   rpcEndpoint: string;
 }
+
+/** Common interface implemented by SimulatedPeer and WebBluetoothPeer. */
+export interface FernlinkPeer {
+  info: PeerInfo;
+  onProof(handler: (proof: VerificationProof) => void): void;
+  handleRequest(req: VerificationRequest): Promise<void>;
+}

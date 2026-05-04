@@ -13,7 +13,7 @@ const platforms = [
   { name: "TypeScript / Node.js", lang: "TypeScript", status: "Available" },
   { name: "Rust Core",            lang: "Rust",        status: "Available" },
   { name: "Android",              lang: "Kotlin",      status: "Available" },
-  { name: "iOS (Swift)",          lang: "Swift",       status: "In Development" },
+  { name: "iOS (Swift)",          lang: "Swift",       status: "Available" },
   { name: "React Native",         lang: "TypeScript",  status: "Planned" },
 ];
 
@@ -53,8 +53,8 @@ const optimizations = [
 
 const futureItems = [
   { title: "Token Incentives ($Fern)",  desc: "Reward verifiers with micro-payments or governance tokens for providing verification services to the mesh." },
-  { title: "Cross-Chain Support",       desc: "Extend the protocol to verify transactions on other blockchains — Ethereum, Polygon, and beyond." },
-  { title: "Hardware Modules",          desc: "Dedicated Fernlink hardware for merchants and infrastructure operators — always-on verification nodes." },
+  { title: "Cross-Chain Support",       desc: "Extend the protocol to verify transactions on other blockchains like Ethereum and Polygon." },
+  { title: "Hardware Modules",          desc: "Dedicated Fernlink hardware for merchants and infrastructure operators, providing always-on verification nodes." },
   { title: "Decentralized Governance",  desc: "Community-driven protocol upgrades via on-chain voting and proposal mechanisms." },
   { title: "AI-Powered Routing",        desc: "Machine learning models that optimize proof propagation paths based on network topology and historical patterns." },
 ];
@@ -131,7 +131,7 @@ export default function Docs() {
             <div className="space-y-3 font-mono text-sm text-[#166534]">
               {[
                 ["Proof Signing", "Every verification proof is signed using the verifier's Ed25519 keypair, ensuring authenticity and non-repudiation."],
-                ["Multi-Validator Consensus", "Configurable threshold (default 2+ proofs) — proofs are only accepted when enough independent verifiers agree."],
+                ["Multi-Validator Consensus", "Configurable threshold, default 2+ proofs. Proofs are only accepted when enough independent verifiers agree."],
                 ["Attack Prevention", "Replay attacks mitigated via UUID deduplication with TTL. Sybil attacks addressed through consensus thresholds."],
                 ["Privacy", "No private keys are shared. Only transaction signatures and verification proofs traverse the mesh."],
               ].map(([title, desc]) => (

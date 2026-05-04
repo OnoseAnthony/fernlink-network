@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { GITHUB } from "@/lib/constants";
 
 function H2({ children }: { children: React.ReactNode }) {
   return (
@@ -59,7 +60,7 @@ export default function IntroducingFernlink() {
       <article className="py-10">
 
         <P>
-          Every Solana wallet, every dApp, every trading bot — they all share the same
+          Every Solana wallet, every dApp, every trading bot shares the same
           chokepoint: a handful of centralized RPC providers. When those providers slow
           down, every application on the network slows with them. When they go offline,
           transactions stop confirming. And as Solana's transaction volume grows, the
@@ -68,14 +69,14 @@ export default function IntroducingFernlink() {
         <P>
           We built Fernlink to break that dependency. Today we're open-sourcing the full
           protocol stack: a peer-to-peer mesh that lets nearby devices collaboratively
-          verify Solana transactions and share the cryptographic proof — so one RPC call
+          verify Solana transactions and share the cryptographic proof, so one RPC call
           does the work of many.
         </P>
 
         <H2>// THE_PROBLEM</H2>
         <P>
           Solana processes hundreds of thousands of transactions per day. For each one,
-          every interested device — wallet, POS terminal, IoT node — makes its own
+          every interested device (wallet, POS terminal, IoT node) makes its own
           independent call to an RPC endpoint to confirm the transaction is settled.
           That's a massive, duplicated load on a small number of infrastructure providers.
         </P>
@@ -101,7 +102,7 @@ export default function IntroducingFernlink() {
         </P>
         <div className="bg-black border border-[#064e3b] p-6 terminal-border my-6 space-y-5">
           {[
-            ["01 REQUEST", "A device needing verification broadcasts a signed request over BLE, WiFi Direct, or NFC — containing the transaction signature, desired commitment level, and a TTL."],
+            ["01 REQUEST", "A device needing verification broadcasts a signed request over BLE, WiFi Direct, or NFC. The message contains the transaction signature, desired commitment level, and a TTL."],
             ["02 VERIFY", "A peer with RPC access checks the transaction against the Solana ledger, signs the result with its Ed25519 key, and returns a compact proof."],
             ["03 PROPAGATE", "The proof spreads through the mesh via gossip. Each hop is tracked. UUID deduplication prevents replays. When enough independent verifiers agree, the transaction is settled."],
           ].map(([label, desc]) => (
@@ -112,7 +113,7 @@ export default function IntroducingFernlink() {
           ))}
         </div>
         <P>
-          The result: in a dense environment — a conference hall, a market, a city block —
+          The result: in a dense environment like a conference hall, a market, or a city block,
           one RPC call can settle verification for dozens of nearby devices.
           Our modelling puts the RPC reduction at <Highlight>60–80%</Highlight> in realistic mesh scenarios.
         </P>
@@ -127,7 +128,7 @@ export default function IntroducingFernlink() {
             Every proof is <Highlight>Ed25519 signed</Highlight> by the verifying node. Proofs cannot be forged or attributed to a different verifier.
           </Bullet>
           <Bullet>
-            <Highlight>Multi-validator consensus</Highlight> — configurable threshold, default 2+ independent proofs — before a transaction is considered settled. One compromised peer can't unilaterally confirm.
+            <Highlight>Multi-validator consensus</Highlight> with a configurable threshold, default 2+ independent proofs, before a transaction is considered settled. One compromised peer can't unilaterally confirm.
           </Bullet>
           <Bullet>
             <Highlight>UUID deduplication with TTL</Highlight> prevents replay attacks. Each proof ID can only be accepted once within its validity window.
@@ -143,10 +144,12 @@ export default function IntroducingFernlink() {
         </P>
         <div className="grid sm:grid-cols-2 gap-4 my-6">
           {[
-            ["fernlink-core (Rust)", "The canonical protocol implementation — Ed25519 keypairs, proof signing and verification, gossip deduplication, multi-proof consensus, and an optional Solana RPC client. Published to crates.io."],
+            ["fernlink-core (Rust)", "The canonical protocol implementation. Covers Ed25519 keypairs, proof signing and verification, gossip deduplication, multi-proof consensus, and an optional Solana RPC client. Published to crates.io."],
             ["fernlink-sdk (TypeScript)", "Full TypeScript port of the core protocol. SimulatedPeer lets you build and test mesh behaviour without any hardware. Published to npm."],
-            ["Android SDK (Kotlin)", "Native Android library with JNI bindings to the Rust core. Includes a full BLE GATT service and client — advertises the Fernlink profile, handles characteristic writes, sends proof notifications."],
-            ["BLE Transport Layer", "Desktop/Node.js BLE using bleno + noble. Fragmentation over MTU-512, automatic transport selection, store-and-forward queue for reconnects."],
+            ["Android SDK (Kotlin)", "Native Android library with JNI bindings to the Rust core. Includes a full BLE GATT service and client, advertising the Fernlink profile, handling characteristic writes, and sending proof notifications."],
+            ["iOS SDK (Swift)", "Native Swift library using CryptoKit for Ed25519 signing and CoreBluetooth for BLE mesh. Matches the Android feature set including TTL-based multi-hop routing and store-and-forward."],
+            ["Web Bluetooth (Browser)", "TypeScript peer that connects Chrome and Edge browsers into the mesh as BLE centrals. Fragments messages over MTU and exposes the same FernlinkPeer interface as SimulatedPeer."],
+            ["Desktop BLE (Rust)", "Cross-platform BLE built on btleplug and bluer. Scans for peers on macOS, Linux, and Windows as a central. Linux also runs as a peripheral via bluer. Includes store-and-forward for reconnects."],
           ].map(([title, desc]) => (
             <div key={title} className="bg-black border border-[#064e3b] p-5 terminal-border">
               <div className="font-mono text-[#22C55E] text-xs uppercase tracking-widest mb-2">{title}</div>
@@ -160,7 +163,7 @@ export default function IntroducingFernlink() {
           The fastest way to see Fernlink in action is the devnet demo. It spins up three
           simulated mesh peers, sends a real SOL transfer on devnet, routes the verification
           request through the peer mesh, and prints each signed proof alongside the final
-          consensus result — no hardware required.
+          consensus result. No hardware required.
         </P>
         <div className="bg-black border border-[#064e3b] px-5 py-4 font-mono text-sm text-[#22C55E] my-4 flex items-center gap-3">
           <span className="text-[#166534] select-none">$</span>
@@ -180,28 +183,25 @@ export default function IntroducingFernlink() {
         </P>
         <ul className="mb-6 space-y-1">
           <Bullet>
-            <strong className="text-[#22C55E]">iOS SDK (Swift)</strong> — in development, the final piece for full mobile coverage.
+            <strong className="text-[#22C55E]">React Native bridge</strong> for a single SDK across cross-platform mobile apps.
           </Bullet>
           <Bullet>
-            <strong className="text-[#22C55E]">React Native bridge</strong> — a single SDK for cross-platform mobile apps.
+            <strong className="text-[#22C55E]">LZ4 wire compression</strong> to reduce proof payload size for constrained BLE links.
           </Bullet>
           <Bullet>
-            <strong className="text-[#22C55E]">LZ4 wire compression</strong> — reducing proof payload size for constrained BLE links.
-          </Bullet>
-          <Bullet>
-            <strong className="text-[#22C55E]">Verifier incentives</strong> — the $Fern token is a future aspiration; protocol maturity comes first.
+            <strong className="text-[#22C55E]">Verifier incentives.</strong> The $Fern token is a future aspiration; protocol maturity comes first.
           </Bullet>
         </ul>
         <P>
           Fernlink is open source and built in public. If you're working on Solana
-          infrastructure, offline-first dApps, or BLE mesh networking — we'd love to
+          infrastructure, offline-first dApps, or BLE mesh networking, we'd love to
           hear from you.
         </P>
 
         {/* CTA */}
         <div className="mt-12 pt-8 border-t border-[#064e3b] flex flex-wrap gap-4">
           <a
-            href="https://github.com/Fernlink-Protocol/fernlink-network"
+            href={GITHUB}
             target="_blank"
             rel="noopener noreferrer"
             className="font-mono text-sm uppercase tracking-widest border border-[#22C55E] text-[#22C55E] px-5 py-2 inline-block hover:bg-[#22C55E] hover:text-black transition-all"

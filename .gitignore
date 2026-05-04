@@ -13,7 +13,11 @@ dist-ssr
 *.local
 
 # Rust build artifacts
-packages/fernlink-core/target/
+packages/*/target/
+
+# Swift/Xcode build artifacts
+packages/ios/.build/
+packages/*/DerivedData/
 
 # Package lock files (keep package-lock.json, ignore bun lock in packages)
 packages/*/node_modules/

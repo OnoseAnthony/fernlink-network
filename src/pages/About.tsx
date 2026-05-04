@@ -1,3 +1,5 @@
+import { GITHUB } from "@/lib/constants";
+
 const problems = [
   {
     code: "ERR_CENTRALIZED_RPC",
@@ -7,7 +9,7 @@ const problems = [
   {
     code: "ERR_COST_AT_SCALE",
     title: "Cost at Scale",
-    desc: "High transaction volumes on Solana mean millions of RPC calls daily — costs that are passed on to developers and users.",
+    desc: "High transaction volumes on Solana mean millions of RPC calls daily. Those costs are passed directly to developers and users.",
   },
   {
     code: "ERR_CONNECTIVITY_GAP",
@@ -112,7 +114,7 @@ export default function About() {
           </p>
           <div className="mt-6 pt-6 border-t border-[#064e3b]">
             <a
-              href="https://github.com/Fernlink-Protocol/fernlink-network"
+              href={GITHUB}
               target="_blank"
               rel="noopener noreferrer"
               className="font-mono text-sm uppercase tracking-widest border border-[#22C55E] text-[#22C55E] px-6 py-3 inline-block hover:bg-[#22C55E] hover:text-black transition-all"

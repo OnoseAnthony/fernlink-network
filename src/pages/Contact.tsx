@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { GITHUB } from "@/lib/constants";
 
 const faqs = [
   {
@@ -11,11 +12,11 @@ const faqs = [
   },
   {
     q: "What happens when there's no internet?",
-    a: "If any directly connected peer has internet access, that peer verifies the transaction and returns a signed proof — your device never needs its own connection. If no connected peer has internet, the store-and-forward layer queues the request and retries automatically as peers come and go. Multi-hop routing — where a request travels through a chain of devices until it finds one with connectivity — is on the active roadmap and will extend coverage to fully offline mesh environments.",
+    a: "Fernlink uses TTL-based multi-hop routing, fully implemented across Android, iOS, and desktop. When your device has no connectivity, it sends the request to nearby peers over BLE. Each peer that also lacks internet decrements the TTL by one and forwards the request further into the mesh. The first device that can reach Solana RPC independently verifies the transaction, signs a cryptographic proof, and sends it back through the same chain. The proof travels from that device back through each intermediate hop until it reaches you. The TTL starts at 8, allowing up to 8 hops in each direction. If no peers are reachable at all, a store-and-forward queue holds your request and drains it automatically the moment a peer connects.",
   },
   {
     q: "Which transports are supported?",
-    a: "BLE 5.0 (~100m range), WiFi Direct (~200m range), and NFC (~10cm, ideal for POS). The protocol automatically selects the best transport based on availability and requirements.",
+    a: "BLE 5.0 is the primary transport, implemented natively on Android (GATT), iOS (CoreBluetooth), and desktop Linux/macOS/Windows (btleplug). Web browsers connect as BLE centrals via the Web Bluetooth API in Chrome and Edge. WiFi Direct and NFC are on the roadmap.",
   },
   {
     q: "Is Fernlink open source?",
@@ -23,7 +24,7 @@ const faqs = [
   },
   {
     q: "Is there a token?",
-    a: "$Fern is a future aspiration — community governance and verifier incentives are on the roadmap. Nothing is live yet; protocol maturity comes first.",
+    a: "$Fern is a future aspiration. Community governance and verifier incentives are on the roadmap, but nothing is live yet. Protocol maturity comes first.",
   },
 ];
 
@@ -88,7 +89,7 @@ export default function Contact() {
 
           <div className="bg-black border border-[#064e3b] p-6 terminal-border">
             <a
-              href="https://github.com/Fernlink-Protocol/fernlink-network"
+              href={GITHUB}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-4 group"

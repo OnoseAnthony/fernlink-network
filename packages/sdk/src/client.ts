@@ -5,6 +5,7 @@ import { getSignatureStatus } from "./rpc.js";
 import { SimulatedPeer } from "./peer.js";
 import type {
   FernlinkClientOptions,
+  FernlinkPeer,
   VerifyOptions,
   VerificationRequest,
   VerificationProof,
@@ -16,7 +17,7 @@ export class FernlinkClient {
   private keypair;
   private rpcEndpoint: string;
   private minProofs: number;
-  private peers: SimulatedPeer[] = [];
+  private peers: FernlinkPeer[] = [];
   private started = false;
 
   constructor(opts: FernlinkClientOptions) {
@@ -48,7 +49,7 @@ export class FernlinkClient {
    * Register a simulated peer (stand-in for a BLE neighbour device).
    * Each peer will independently query RPC and return a signed proof.
    */
-  addPeer(peer: SimulatedPeer): void {
+  addPeer(peer: FernlinkPeer): void {
     this.peers.push(peer);
   }
 

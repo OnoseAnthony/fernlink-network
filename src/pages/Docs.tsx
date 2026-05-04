@@ -52,10 +52,16 @@ const optimizations = [
 ];
 
 const futureItems = [
+  { title: "Transaction Broadcasting",   desc: "Devices with no internet can create and sign a transaction locally, then pass it through the mesh to a connected node that submits it to the RPC. Makes the protocol bidirectional: not just proofs coming back, but transactions going out." },
+  { title: "Account State Queries",      desc: "Extend the mesh query layer beyond transaction confirmation. A device asks nearby peers for account balances, token holdings, or recent history. Peers with internet fetch, sign, and return the response — full read access without a direct connection." },
+  { title: "Offline Payment Channels",  desc: "Two devices open a payment channel over BLE and exchange signed state updates with no internet at all. Either device settles the final state on-chain when connectivity returns. No RPC is needed until settlement." },
+  { title: "Program State Queries",     desc: "Query on-chain program and smart contract state through the mesh. A device asks for the current state of a DeFi pool, an NFT collection, or any on-chain account. Peers fetch and sign the response." },
+  { title: "Peer Reputation",           desc: "Verifiers who consistently return accurate proofs accumulate on-chain reputation. Nodes that return bad proofs or go offline during a request lose standing. Shifts trust from consensus-only to track-record-backed, and lays the ground for the incentive layer." },
   { title: "Token Incentives ($Fern)",  desc: "Reward verifiers with micro-payments or governance tokens for providing verification services to the mesh." },
-  { title: "Cross-Chain Support",       desc: "Extend the protocol to verify transactions on other blockchains like Ethereum and Polygon." },
   { title: "Hardware Modules",          desc: "Dedicated Fernlink hardware for merchants and infrastructure operators, providing always-on verification nodes." },
   { title: "Decentralized Governance",  desc: "Community-driven protocol upgrades via on-chain voting and proposal mechanisms." },
+  { title: "Cross-Chain Support",       desc: "Extend the proof and gossip layer to additional blockchain networks. The BLE mesh and Ed25519 infrastructure are not Solana-specific — only the RPC call and signature scheme change per chain." },
+  { title: "LZ4 Wire Compression",      desc: "Compress proof payloads before transmission to reduce bytes over the BLE link. Particularly useful for high-frequency DeFi operations and constrained IoT devices." },
   { title: "AI-Powered Routing",        desc: "Machine learning models that optimize proof propagation paths based on network topology and historical patterns." },
 ];
 

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Fernlink Web Demo</title>
+  <style>
+    body { font-family: monospace; background: #0a0a0a; color: #22c55e; padding: 2rem; max-width: 700px; }
+    h1   { letter-spacing: 0.2em; font-size: 1.4rem; }
+    p    { color: #4ade80; font-size: 0.85rem; line-height: 1.6; }
+    input, button { font-family: monospace; font-size: 0.9rem; padding: 0.5rem 1rem; }
+    input  { background: #111; color: #22c55e; border: 1px solid #166534; width: 100%; box-sizing: border-box; }
+    button { background: #22c55e; color: #000; border: none; cursor: pointer; margin-top: 0.5rem; width: 100%; }
+    button:disabled { background: #166534; cursor: default; }
+    pre   { background: #111; border: 1px solid #166534; padding: 1rem; white-space: pre-wrap; font-size: 0.8rem; min-height: 6rem; }
+    label { display: block; color: #4ade80; font-size: 0.8rem; margin: 1rem 0 0.3rem; }
+  </style>
+</head>
+<body>
+  <h1>FERNLINK // WEB DEMO</h1>
+  <p>
+    Central-role only. Click <em>Connect to mesh node</em> to pick a nearby
+    Android or desktop Fernlink node via Web Bluetooth (Chrome/Edge required).
+    Then paste a Solana devnet tx signature and hit <em>Verify</em>.
+  </p>
+
+  <button id="connectBtn">Connect to mesh node</button>
+
+  <label for="rpc">Solana RPC endpoint</label>
+  <input id="rpc" value="https://api.devnet.solana.com" />
+
+  <label for="txSig">Transaction signature</label>
+  <input id="txSig" placeholder="paste a devnet tx signature…" />
+
+  <button id="verifyBtn" disabled>Verify transaction</button>
+
+  <label>Output</label>
+  <pre id="output">waiting…</pre>
+
+  <script type="module">
+    // In a real project you'd import from "fernlink-sdk".
+    // Here we load the built dist directly.
+    import { FernlinkClient, WebBluetoothPeer } from "../../sdk/dist/index.mjs";
+
+    const connectBtn = document.getElementById("connectBtn");
+    const verifyBtn  = document.getElementById("verifyBtn");
+    const rpcInput   = document.getElementById("rpc");
+    const txInput    = document.getElementById("txSig");
+    const output     = document.getElementById("output");
+
+    let client = null;
+
+    connectBtn.addEventListener("click", async () => {
+      output.textContent = "scanning for nearby Fernlink nodes…";
+      try {
+        const peer = await WebBluetoothPeer.connect();
+        client = new FernlinkClient({ rpcEndpoint: rpcInput.value });
+        await client.start();
+        client.addPeer(peer);
+        output.textContent = `connected to node: ${peer.info.id}\nready to verify.`;
+        verifyBtn.disabled = false;
+        connectBtn.textContent = "reconnect";
+      } catch (e) {
+        output.textContent = `connection error: ${e.message}`;
+      }
+    });
+
+    verifyBtn.addEventListener("click", async () => {
+      const sig = txInput.value.trim();
+      if (!sig) { output.textContent = "enter a tx signature first"; return; }
+
+      output.textContent = "verifying…";
+      verifyBtn.disabled = true;
+
+      try {
+        const result = await client.verifyTransaction(sig, { timeoutMs: 15000 });
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (e) {
+        output.textContent = `error: ${e.message}`;
+      } finally {
+        verifyBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

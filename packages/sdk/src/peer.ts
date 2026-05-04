@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { generateKeypair, signProof, bytesToHex } from "./crypto.js";
 import { getSignatureStatus } from "./rpc.js";
-import type { VerificationRequest, VerificationProof, PeerInfo } from "./types.js";
+import type { VerificationRequest, VerificationProof, PeerInfo, FernlinkPeer } from "./types.js";
 
 type ProofHandler = (proof: VerificationProof) => void;
 
@@ -10,7 +10,7 @@ type ProofHandler = (proof: VerificationProof) => void;
  * In production this would be a BLE/WiFi-Direct peer; here it
  * runs locally to demonstrate and test the full protocol flow.
  */
-export class SimulatedPeer {
+export class SimulatedPeer implements FernlinkPeer {
   readonly info: PeerInfo;
   private keypair = generateKeypair();
   private handlers: ProofHandler[] = [];

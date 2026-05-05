@@ -1,5 +1,8 @@
 import { EventEmitter } from "node:events";
-import Bonjour from "bonjour-service";
+// bonjour-service has no default export in ESM — import as namespace
+import * as BonjourModule from "bonjour-service";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Bonjour = (BonjourModule as any).default ?? BonjourModule;
 
 export interface WifiPeerInfo {
   host: string;
@@ -19,9 +22,12 @@ export interface WifiPeerInfo {
  */
 export class MdnsDiscovery extends EventEmitter {
 
-  private bonjour: Bonjour;
-  private browser: ReturnType<Bonjour["find"]> | null = null;
-  private service: ReturnType<Bonjour["publish"]> | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private bonjour: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private browser: any = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private service: any = null;
 
   constructor() {
     super();
@@ -39,13 +45,15 @@ export class MdnsDiscovery extends EventEmitter {
 
   browse(): void {
     this.browser = this.bonjour.find({ type: "fernlink" });
-    this.browser.on("up", (service) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this.browser.on("up", (service: any) => {
       const pk = (service.txt as Record<string, string>)?.pk;
       if (!pk) return;
       const host = service.addresses?.[0] ?? service.host;
       this.emit("peer", { host, port: service.port, name: service.name, pk } as WifiPeerInfo);
     });
-    this.browser.on("down", (service) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this.browser.on("down", (service: any) => {
       this.emit("lost", service.name);
     });
   }

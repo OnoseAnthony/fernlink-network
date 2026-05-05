@@ -5,6 +5,7 @@ mod rpc;
 mod router;
 mod transport;
 mod uuids;
+mod wifi;
 
 use std::sync::Arc;
 
@@ -55,14 +56,22 @@ async fn main() -> Result<()> {
 
     let mut ble_handle = build_ble_transport(&cli.name).await?;
     router::run_router(&mut ble_handle, &keypair, &cli.rpc).await;
+    let ble_store = Arc::clone(&ble_handle.proof_store);
 
-    let proof_store = Arc::clone(&ble_handle.proof_store);
+    let mut wifi_handle = wifi::build_wifi_transport(&pubkey).await?;
+    router::run_router(&mut wifi_handle, &keypair, &cli.rpc).await;
+    let wifi_store = Arc::clone(&wifi_handle.proof_store);
 
     loop {
         tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-        let peers  = (ble_handle.connected_peer_count)();
-        let proofs = proof_store.lock().await.len();
-        info!("peers: {peers}  proofs collected: {proofs}");
+        let ble_peers  = (ble_handle.connected_peer_count)();
+        let wifi_peers = (wifi_handle.connected_peer_count)();
+        let proofs = ble_store.lock().await.len() + wifi_store.lock().await.len();
+        info!(
+            "ble_peers: {ble_peers}  wifi_peers: {wifi_peers}  \
+             total_peers: {}  proofs: {proofs}",
+            ble_peers + wifi_peers,
+        );
     }
 }
 

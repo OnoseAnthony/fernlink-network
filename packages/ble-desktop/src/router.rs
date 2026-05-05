@@ -71,8 +71,8 @@ pub async fn handle_request(
     payload:      Vec<u8>,
     keypair:      &Keypair,
     rpc_url:      &str,
-    send_proof:   Arc<crate::transport::SendFn>,
-    send_request: Arc<crate::transport::SendFn>,
+    send_proof:   crate::transport::SendFn,
+    send_request: crate::transport::SendFn,
 ) -> Result<()> {
     let json: Value = serde_json::from_slice(&payload)?;
     let tx_sig = json["txSignature"].as_str().unwrap_or("").to_string();
@@ -91,14 +91,14 @@ pub async fn handle_request(
             );
             let proof_bytes = serde_json::to_vec(&proof)?;
             info!("verified {tx_sig}, sending proof");
-            (*send_proof)(proof_bytes).await?;
+            send_proof(proof_bytes).await?;
         }
         Err(e) => {
             warn!("RPC failed ({e}), forwarding request (ttl={ttl})");
             if ttl > 0 {
                 let mut forwarded = json.clone();
                 forwarded["ttl"] = Value::from(ttl - 1);
-                (*send_request)(forwarded.to_string().into_bytes()).await?;
+                send_request(forwarded.to_string().into_bytes()).await?;
             }
         }
     }

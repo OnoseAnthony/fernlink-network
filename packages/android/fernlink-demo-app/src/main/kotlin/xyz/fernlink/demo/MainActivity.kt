@@ -1,13 +1,9 @@
 package xyz.fernlink.demo
 
 import android.Manifest
-import android.content.ComponentName
-import android.content.Intent
-import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.IBinder
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -18,31 +14,21 @@ import kotlinx.coroutines.*
 import xyz.fernlink.sdk.Commitment
 import xyz.fernlink.sdk.FernlinkClient
 import xyz.fernlink.sdk.FernlinkClientConfig
-import xyz.fernlink.sdk.ble.FernlinkBleService
+import xyz.fernlink.sdk.TransportManager
 
 class MainActivity : AppCompatActivity() {
 
     private val client = FernlinkClient(
         FernlinkClientConfig(rpcEndpoint = "https://api.devnet.solana.com")
     )
-    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-
-    private var bleService: FernlinkBleService? = null
-    private val bleConnection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName, binder: IBinder) {
-            bleService = (binder as FernlinkBleService.LocalBinder).service
-            client.attachBleService(bleService!!)
-            updatePeerCount()
-        }
-        override fun onServiceDisconnected(name: ComponentName) {
-            bleService = null
-        }
-    }
+    private val scope   = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private lateinit var transportManager: TransportManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         client.start()
+        transportManager = TransportManager(this, client)
 
         val etSignature  = findViewById<EditText>(R.id.etSignature)
         val btnVerify    = findViewById<Button>(R.id.btnVerify)
@@ -52,7 +38,7 @@ class MainActivity : AppCompatActivity() {
         log(tvLog, "Device public key: ${client.publicKey.take(16)}…")
         log(tvLog, "RPC: https://api.devnet.solana.com\n")
 
-        requestBlePermissionsAndStartService()
+        requestPermissionsAndStartServices()
 
         btnVerify.setOnClickListener {
             val sig = etSignature.text.toString().trim()
@@ -62,7 +48,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun requestBlePermissionsAndStartService() {
+    private fun requestPermissionsAndStartServices() {
         val needed = mutableListOf<String>()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             listOf(
@@ -76,31 +62,36 @@ class MainActivity : AppCompatActivity() {
                 needed += Manifest.permission.ACCESS_FINE_LOCATION
             }
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.NEARBY_WIFI_DEVICES)
+                != PackageManager.PERMISSION_GRANTED) {
+                needed += Manifest.permission.NEARBY_WIFI_DEVICES
+            }
+        }
 
         if (needed.isNotEmpty()) {
-            ActivityCompat.requestPermissions(this, needed.toTypedArray(), RC_BLE)
+            ActivityCompat.requestPermissions(this, needed.toTypedArray(), RC_PERMS)
         } else {
-            bindBleService()
+            transportManager.startAll()
+            updatePeerCount()
         }
     }
 
     override fun onRequestPermissionsResult(rc: Int, perms: Array<out String>, grants: IntArray) {
         super.onRequestPermissionsResult(rc, perms, grants)
-        if (rc == RC_BLE) bindBleService()
-    }
-
-    private fun bindBleService() {
-        val intent = Intent(this, FernlinkBleService::class.java)
-        ContextCompat.startForegroundService(this, intent)
-        bindService(intent, bleConnection, BIND_AUTO_CREATE)
+        if (rc == RC_PERMS) {
+            transportManager.startAll()
+            updatePeerCount()
+        }
     }
 
     private fun updatePeerCount() {
         scope.launch {
             while (true) {
-                val count = client.connectedPeerCount
+                val count = transportManager.connectedPeerCount
                 val tv = findViewById<TextView>(R.id.tvPeers)
-                tv?.text = if (count == 0) "BLE: scanning…" else "BLE: $count peer${if (count == 1) "" else "s"} connected"
+                tv?.text = if (count == 0) "Scanning (BLE + WiFi Direct)…"
+                           else "$count peer${if (count == 1) "" else "s"} connected"
                 delay(3_000)
             }
         }
@@ -120,11 +111,11 @@ class MainActivity : AppCompatActivity() {
         log(tvLog, "    ${signature.take(32)}…\n")
         log(tvLog, "[2] Querying Solana devnet via RPC…")
 
-        val peers = client.connectedPeerCount
+        val peers = transportManager.connectedPeerCount
         if (peers > 0) {
-            log(tvLog, "[BLE] Broadcasting to $peers peer${if (peers == 1) "" else "s"}…")
+            log(tvLog, "[MESH] Broadcasting to $peers peer${if (peers == 1) "" else "s"} (BLE + WiFi)…")
         } else {
-            log(tvLog, "[BLE] No peers — local proof only\n")
+            log(tvLog, "[MESH] No peers — local proof only\n")
         }
 
         val result = runCatching {
@@ -175,12 +166,11 @@ class MainActivity : AppCompatActivity() {
     }.getOrNull()
 
     override fun onDestroy() {
-        super.onDestroy()
-        client.detachBleService()
-        runCatching { unbindService(bleConnection) }
+        transportManager.stopAll()
         client.stop()
         scope.cancel()
+        super.onDestroy()
     }
 
-    companion object { private const val RC_BLE = 100 }
+    companion object { private const val RC_PERMS = 100 }
 }

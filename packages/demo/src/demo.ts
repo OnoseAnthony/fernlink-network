@@ -11,7 +11,7 @@
  *   6. Consensus is reached — your device never touched the RPC
  *
  * No physical hardware required — the BLE/WiFi transport is simulated in-process.
- * In production, SimulatedPeer is replaced by real Android/iOS devices over BLE.
+ * In production, SimulatedPeer is replaced by real Android/iOS/desktop peers over BLE, WiFi/TCP, or NFC.
  */
 
 import nacl from "tweetnacl";
@@ -302,8 +302,16 @@ async function main() {
   explain("result (same status + same slot) before a transaction is considered");
   explain("settled. This prevents a single rogue peer from lying to you.");
 
+  // One vote per distinct signer — matches the CRIT-2 fix in consensus.ts
+  const seenSigners = new Set<string>();
+  const uniqueProofs = proofs.filter(p => {
+    if (seenSigners.has(p.verifierPublicKey)) return false;
+    seenSigners.add(p.verifierPublicKey);
+    return true;
+  });
+
   const tally = new Map<string, number>();
-  for (const p of proofs) {
+  for (const p of uniqueProofs) {
     const key = `${p.status}:${p.slot}`;
     tally.set(key, (tally.get(key) ?? 0) + 1);
   }

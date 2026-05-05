@@ -72,9 +72,6 @@ jobs:
   check-wifi:
     name: WiFi/TCP transport type-check
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: packages/wifi
 
     steps:
       - uses: actions/checkout@v4
@@ -84,12 +81,18 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: packages/wifi/package-lock.json
+          cache-dependency-path: packages/sdk/package-lock.json
 
-      - name: Install dependencies
+      - name: Build SDK (peer dependency)
+        working-directory: packages/sdk
+        run: npm ci && npm run build
+
+      - name: Install WiFi dependencies
+        working-directory: packages/wifi
         run: npm ci
 
       - name: Type-check
+        working-directory: packages/wifi
         run: npx tsc --noEmit
 
   test-ble-simulator:

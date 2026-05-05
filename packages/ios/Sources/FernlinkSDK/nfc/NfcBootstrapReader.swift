@@ -1,3 +1,4 @@
+#if canImport(CoreNFC)
 import CoreBluetooth
 import CoreNFC
 import Foundation
@@ -74,3 +75,4 @@ extension NfcBootstrapReader: NFCNDEFReaderSessionDelegate {
     public func readerSession(_ session: NFCNDEFReaderSession,
                               didInvalidateWithError error: Error) {}
 }
+#endif

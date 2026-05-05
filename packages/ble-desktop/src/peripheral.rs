@@ -1,6 +1,7 @@
 #![cfg(target_os = "linux")]
 
 use anyhow::Result;
+use std::sync::{Arc, Mutex};
 use bluer::{
     adv::{Advertisement, AdvertisementHandle},
     gatt::local::{
@@ -65,18 +66,18 @@ fn build_application(
     request_tx: mpsc::Sender<Vec<u8>>,
     notify_tx: tokio::sync::broadcast::Sender<Vec<u8>>,
 ) -> Application {
-    let mut reassembler = Reassembler::default();
+    let reassembler = Arc::new(Mutex::new(Reassembler::default()));
 
     let request_char = Characteristic {
         uuid: CHAR_REQUEST,
         write: Some(CharacteristicWrite {
             write: true,
             write_without_response: true,
-            method: CharacteristicWriteMethod::Fun(Box::new(move |req, _| {
-                let tx   = request_tx.clone();
-                let data = req.value.clone();
+            method: CharacteristicWriteMethod::Fun(Box::new(move |data, _| {
+                let tx           = request_tx.clone();
+                let reassembler  = reassembler.clone();
                 Box::pin(async move {
-                    if let Some(complete) = reassembler.feed(&data) {
+                    if let Some(complete) = reassembler.lock().unwrap().feed(&data) {
                         let _ = tx.send(complete).await;
                     }
                     Ok(())

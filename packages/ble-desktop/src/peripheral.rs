@@ -77,7 +77,8 @@ fn build_application(
                 let tx           = request_tx.clone();
                 let reassembler  = reassembler.clone();
                 Box::pin(async move {
-                    if let Some(complete) = reassembler.lock().unwrap().feed(&data) {
+                    let complete = reassembler.lock().unwrap().feed(&data);
+                    if let Some(complete) = complete {
                         let _ = tx.send(complete).await;
                     }
                     Ok(())

@@ -1,5 +1,8 @@
 import Foundation
 import MultipeerConnectivity
+#if canImport(UIKit)
+import UIKit
+#endif
 
 /// Fernlink transport over Apple's Multipeer Connectivity Framework.
 ///
@@ -34,7 +37,12 @@ public final class MultipeerTransport: NSObject, FernlinkTransport {
 
     public init(localPubKey: String) {
         self.localPubKey = localPubKey
-        self.localPeer   = MCPeerID(displayName: UIDevice.current.name)
+        #if canImport(UIKit)
+        let deviceName = UIDevice.current.name
+        #else
+        let deviceName = Host.current().localizedName ?? ProcessInfo.processInfo.hostName
+        #endif
+        self.localPeer   = MCPeerID(displayName: deviceName)
         self.session     = MCSession(peer: localPeer, securityIdentity: nil,
                                      encryptionPreference: .required)
         super.init()

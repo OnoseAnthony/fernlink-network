@@ -86,6 +86,7 @@ public final class FernlinkClient {
 
     // MARK: - NFC bootstrapping
 
+#if canImport(CoreNFC)
     /// Create an NFC reader that parses an Android HCE bootstrap tap.
     /// On receipt, calls CentralManager.connectDirect() on the BLE transport
     /// so BLE pairing skips the scan phase (~5s → ~200ms).
@@ -109,6 +110,7 @@ public final class FernlinkClient {
             onBootstrapReceived?(peerPubKey, bleAddress)
         }
     }
+#endif
 
     // MARK: - Verification
 

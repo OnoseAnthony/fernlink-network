@@ -5,11 +5,13 @@ on:
     paths:
       - "packages/fernlink-core/**"
       - "packages/android/fernlink-core-ffi/**"
+      - "packages/ble-desktop/**"
       - ".github/workflows/rust.yml"
   pull_request:
     paths:
       - "packages/fernlink-core/**"
       - "packages/android/fernlink-core-ffi/**"
+      - "packages/ble-desktop/**"
       - ".github/workflows/rust.yml"
 
 jobs:
@@ -41,6 +43,35 @@ jobs:
 
       - name: Test
         run: cargo test --all-features
+
+  build-desktop:
+    name: ble-desktop build (BLE + WiFi transport)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/ble-desktop
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux BLE dependencies
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            packages/ble-desktop/target
+          key: ${{ runner.os }}-cargo-desktop-${{ hashFiles('packages/ble-desktop/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-desktop-
+
+      - name: Build
+        run: cargo build --all-features
 
   check-ffi:
     name: fernlink-core-ffi check (Android targets)

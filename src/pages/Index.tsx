@@ -5,33 +5,33 @@ const stats = [
   { value: "60-80%", label: "RPC_REDUCTION_LOAD" },
   { value: "<2s",    label: "PROOF_PROPAGATION_LATENCY" },
   { value: "100m+",  label: "BLE_MESH_SIG_RANGE" },
-  { value: "∞",      label: "OFFLINE_RESILIENCE_CORE" },
+  { value: "64",     label: "STORE_AND_FORWARD_QUEUE" },
 ];
 
 const features = [
   {
     icon: "hub",
     title: "Peer-to-Peer Mesh",
-    desc: "Devices connect directly via Bluetooth LE and WiFi Direct, creating a robust web of local verification.",
-    stat: "ACTIVE_TRANSPORTS: 04",
+    desc: "Devices connect directly via Bluetooth LE and WiFi/TCP, creating a resilient web of local verification that operates independently of centralized infrastructure.",
+    stat: "ACTIVE_TRANSPORTS: 03",
   },
   {
     icon: "enhanced_encryption",
     title: "Cryptographic Proofs",
-    desc: "Every verification is backed by Ed25519 signed proofs ensuring transaction validity without exposing private data.",
+    desc: "Every verification is backed by an Ed25519-signed proof tied to the verifier's identity keypair, ensuring authenticity and non-repudiation without exposing private data.",
     stat: "ED25519_STATUS: ACTIVE",
   },
   {
     icon: "dynamic_feed",
     title: "Multi-Transport",
-    desc: "Seamlessly switch between BLE, WiFi Direct, and NFC based on availability, range, and throughput requirements.",
-    stat: "FAILOVER: INSTANT_LOCK",
+    desc: "BLE for low-power mesh networking, WiFi/TCP with mDNS auto-discovery for high-throughput LAN verification, and NFC for sub-200ms peer bootstrapping.",
+    stat: "BLE + WIFI_TCP + NFC",
   },
   {
     icon: "shield_lock",
-    title: "Security & Privacy",
-    desc: "End-to-end encryption at the transport layer keeps node identities and data anonymous and secure.",
-    stat: "E2EE_PROTOCOL_v2_ENFORCED",
+    title: "Proof Integrity",
+    desc: "Every proof is Ed25519-signed by its issuing node. Tampering or substitution is detectable at any hop. Consensus requires agreement from distinct verifier keypairs.",
+    stat: "ED25519_PROOF_INTEGRITY",
   },
 ];
 
@@ -39,7 +39,7 @@ const steps = [
   {
     n: "01",
     title: "Request",
-    desc: "Client broadcasts a transaction verification request to the nearest rhizome nodes via BLE or local mesh.",
+    desc: "Client broadcasts a transaction verification request to nearby peers via BLE, WiFi/TCP, or NFC-bootstrapped connection.",
   },
   {
     n: "02",

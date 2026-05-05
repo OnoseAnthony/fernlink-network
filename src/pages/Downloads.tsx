@@ -8,15 +8,10 @@ const sdks = [
   { platform: "Android (Kotlin)",     pkg: "fernlink-android", install: null,                        repo: `${GITHUB}/tree/main/packages/android`,        status: "Available" },
   { platform: "iOS (Swift)",          pkg: "fernlink-ios",     install: null,                        repo: `${GITHUB}/tree/main/packages/ios`,            status: "Available" },
   { platform: "Web (Browser)",        pkg: "fernlink-sdk",     install: "npm install fernlink-sdk",  repo: `${GITHUB}/tree/main/packages/sdk`,            status: "Available" },
-  { platform: "Desktop (Rust)",       pkg: "fernlink-node",    install: "cargo install fernlink-ble-desktop", repo: `${GITHUB}/tree/main/packages/ble-desktop`, status: "In Development" },
+  { platform: "Desktop (Rust)",       pkg: "fernlink-node",    install: "cargo install fernlink-ble-desktop", repo: `${GITHUB}/tree/main/packages/ble-desktop`, status: "Available" },
   { platform: "React Native",         pkg: "fernlink-rn",      install: null,                        repo: null,                                           status: "Planned" },
 ];
 
-const blogPosts = [
-  { title: "Introducing Fernlink: A New Paradigm for Solana Verification", date: "2026-05-02", href: "/blog/introducing-fernlink" },
-  { title: "How BLE Mesh Networks Can Reduce RPC Costs by 80%",            date: "Coming Soon", href: null },
-  { title: "Building Offline-First Solana Applications",                    date: "Coming Soon", href: null },
-];
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -76,24 +71,30 @@ export default function Downloads() {
             <CodeLine cmd="npx fernlink-demo" />
           </div>
           <div>
-            <div className="font-mono text-[10px] text-[#166534] uppercase tracking-widest mb-3">Verify a transaction via the mesh</div>
+            <div className="font-mono text-[10px] text-[#166534] uppercase tracking-widest mb-3">Verify a transaction via the multi-transport mesh</div>
             <pre className="bg-black border border-[#064e3b] px-4 py-4 font-mono text-sm text-[#22C55E] overflow-x-auto leading-relaxed">
-{`import { FernlinkClient, SimulatedPeer } from "fernlink-sdk";
+{`import { FernlinkClient } from "fernlink-sdk";
+import { TransportManager } from "@fernlink/wifi";
 
-const fernlink = new FernlinkClient({
+const client = new FernlinkClient({
   rpcEndpoint: "https://api.mainnet-beta.solana.com",
+  minProofs: 2,
 });
 
-await fernlink.start();
-fernlink.addPeer(new SimulatedPeer("https://api.mainnet-beta.solana.com"));
+// Discovers peers automatically via mDNS on the local network
+const transport = new TransportManager(
+  client,
+  "https://api.mainnet-beta.solana.com"
+);
+await transport.start();
 
-const result = await fernlink.verifyTransaction(txSignature, {
+const result = await client.verifyTransaction(txSignature, {
   commitment: "confirmed",
-  timeoutMs:  30_000,
-  minProofs:  2,
+  timeoutMs:  15_000,
 });
 
-console.log(result.status, result.slot, result.proofCount);`}
+console.log(result.status, result.slot, result.proofCount);
+// "confirmed"  312847291  3`}
             </pre>
           </div>
         </div>
@@ -123,8 +124,8 @@ console.log(result.status, result.slot, result.proofCount);`}
             <span className="material-symbols-outlined text-[#22C55E] text-4xl mb-4 block data-glow">code</span>
             <h2 className="font-mono font-semibold text-xl text-[#22C55E] mb-3">Source Code</h2>
             <p className="font-mono text-sm text-[#166534] mb-6 leading-relaxed">
-              Full monorepo: Rust core, TypeScript SDK, Android SDK, BLE transport,
-              and devnet demo. Apache 2.0 licensed and open for contributions.
+              Full monorepo: Rust core, TypeScript SDK, Android and iOS SDKs, BLE and WiFi/TCP
+              transports, NFC bootstrapping, and a live devnet demo. Apache 2.0 licensed and open for contributions.
             </p>
             <a
               href={GITHUB}
@@ -194,27 +195,23 @@ console.log(result.status, result.slot, result.proofCount);`}
         </div>
       </section>
 
-      {/* Blog */}
+      {/* Blog callout */}
       <section className="pt-12">
-        <div className="font-mono text-[#22C55E] text-sm uppercase tracking-widest mb-6">
-          // BLOG_AND_UPDATES
-        </div>
-        <div className="bg-black border border-[#064e3b] terminal-border">
-          {blogPosts.map((post, i) => {
-            const row = (
-              <div className={`flex items-center justify-between px-6 py-4 transition-colors ${
-                post.href ? "hover:bg-[#22C55E]/5 cursor-pointer" : "opacity-60"
-              } ${i < blogPosts.length - 1 ? "border-b border-[#064e3b]" : ""}`}>
-                <span className="font-mono text-sm text-[#22C55E]">{post.title}</span>
-                <span className="font-mono text-[10px] text-[#166534] uppercase shrink-0 ml-6">{post.date}</span>
-              </div>
-            );
-            return post.href ? (
-              <Link key={post.title} to={post.href}>{row}</Link>
-            ) : (
-              <div key={post.title}>{row}</div>
-            );
-          })}
+        <div className="bg-black border border-[#064e3b] p-8 terminal-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+          <div>
+            <div className="font-mono text-[#22C55E] text-sm uppercase tracking-widest mb-2">
+              // BLOG_AND_UPDATES
+            </div>
+            <p className="font-mono text-sm text-[#166534] leading-relaxed max-w-lg">
+              Protocol updates, architecture deep-dives, and developer guides are published on the Fernlink blog.
+            </p>
+          </div>
+          <Link
+            to="/blog"
+            className="font-mono text-sm uppercase tracking-widest border border-[#22C55E] text-[#22C55E] px-5 py-2 inline-block hover:bg-[#22C55E] hover:text-black transition-all shrink-0"
+          >
+            [ VIEW BLOG ]
+          </Link>
         </div>
       </section>
     </div>

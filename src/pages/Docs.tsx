@@ -4,39 +4,59 @@ const TABS = ["OVERVIEW", "ARCHITECTURE", "SDK", "PERFORMANCE", "FUTURE"] as con
 type Tab = typeof TABS[number];
 
 const transports = [
-  { name: "BLE 5.0",      range: "~100m",  throughput: "2 Mbps",   latency: "Low",     power: "Very Low" },
-  { name: "WiFi Direct",  range: "~200m",  throughput: "250 Mbps", latency: "Very Low", power: "Medium" },
-  { name: "NFC",          range: "~10cm",  throughput: "424 Kbps", latency: "Instant",  power: "Minimal" },
+  { name: "BLE 5.0",           range: "~100m",  throughput: "2 Mbps",      latency: "Low",      power: "Very Low", note: "Primary mesh transport — Android GATT, iOS CoreBluetooth, desktop btleplug" },
+  { name: "WiFi / TCP (mDNS)", range: "~250m",  throughput: "250 Mbps",    latency: "Very Low", power: "Medium",   note: "LAN transport with automatic peer discovery via mDNS (_fernlink._tcp.local.)" },
+  { name: "NFC Bootstrap",     range: "~4cm",   throughput: "Pairing only", latency: "<200ms",   power: "Minimal",  note: "Exchanges BLE connection metadata over NFC tap — accelerates pairing from ~5s to <200ms" },
 ];
 
 const platforms = [
-  { name: "TypeScript / Node.js", lang: "TypeScript", status: "Available" },
-  { name: "Rust Core",            lang: "Rust",        status: "Available" },
-  { name: "Android",              lang: "Kotlin",      status: "Available" },
-  { name: "iOS (Swift)",          lang: "Swift",       status: "Available" },
-  { name: "React Native",         lang: "TypeScript",  status: "Planned" },
+  { name: "TypeScript / Node.js", lang: "TypeScript", status: "Available", note: "FernlinkClient + WifiPeer + TransportManager" },
+  { name: "Rust Core",            lang: "Rust",        status: "Available", note: "BLE + WiFi/TCP dual-transport desktop binary" },
+  { name: "Android",              lang: "Kotlin",      status: "Available", note: "Native GATT BLE service + NFC bootstrap + TransportManager" },
+  { name: "iOS (Swift)",          lang: "Swift",       status: "Available", note: "CoreBluetooth + Multipeer Connectivity + NFC bootstrap" },
+  { name: "React Native",         lang: "TypeScript",  status: "Planned",  note: "—" },
 ];
 
-const codeExample = `use fernlink_core::{Keypair, sign_proof, verify_proof, evaluate};
+const codeExampleRust = `use fernlink_core::{Keypair, sign_proof, verify_proof, evaluate};
 
 fn main() {
-    // Generate an Ed25519 keypair
     let keypair = Keypair::generate();
 
-    // Sign a verification proof
     let proof = keypair.sign_proof(
-        tx_sig,       // [u8; 64] — transaction signature
+        tx_sig,             // [u8; 64] — transaction signature
         TxStatus::Confirmed,
-        slot,         // u64
-        block_time,   // u64
-        0,            // error_code
+        slot,               // u64
+        block_time,         // u64
+        0,                  // error_code
     );
 
-    // Verify and reach consensus
     assert!(verify_proof(&proof).is_ok());
     let result = evaluate(&[proof], Commitment::Confirmed);
     println!("settled: {}", result.settled);
 }`;
+
+const codeExampleTS = `import { FernlinkClient } from "fernlink-sdk";
+import { TransportManager } from "@fernlink/wifi";
+
+const client = new FernlinkClient({
+  rpcEndpoint: "https://api.mainnet-beta.solana.com",
+  minProofs: 2,
+});
+
+// Start WiFi/TCP transport — discovers peers via mDNS automatically
+const transport = new TransportManager(
+  client,
+  "https://api.mainnet-beta.solana.com"
+);
+await transport.start();
+
+const result = await client.verifyTransaction(txSignature, {
+  commitment: "confirmed",
+  timeoutMs:  15_000,
+});
+
+console.log(result.status, result.slot, result.proofCount);
+// "confirmed"  312847291  3`;
 
 const phases = [
   { phase: "01", title: "Request",     desc: "A device needing verification broadcasts a signed request containing the transaction signature, requested confirmation level, and a TTL." },
@@ -51,18 +71,24 @@ const optimizations = [
   { title: "Scalability", desc: "Bloom filters for duplicate detection, geographic sharding of the gossip protocol, and adaptive TTL based on network density." },
 ];
 
+const shippedItems = [
+  { title: "WiFi / TCP Transport",   desc: "High-throughput LAN verification using TCP with mDNS auto-discovery. Implemented in TypeScript (Node.js) and Rust desktop. Peers advertise via _fernlink._tcp.local. and connect automatically — no manual configuration required." },
+  { title: "NFC Bootstrapping",      desc: "Android and iOS support NFC tap-to-pair: an NDEF record exchange hands off the BLE address and public key, reducing peer discovery from ~5 seconds to under 200ms. The BLE connection then carries all subsequent proof traffic." },
+  { title: "Store-and-Forward",      desc: "A 64-request queue on Android and iOS holds outbound verification requests when no peers are reachable. The queue drains automatically the moment a peer connects, ensuring no request is silently dropped in intermittent connectivity scenarios." },
+  { title: "Multi-Transport Orchestration", desc: "TransportManager on Android, iOS, and TypeScript coordinates BLE and WiFi simultaneously. Verification automatically uses the highest-priority transport with active peers, falling back to direct RPC if none are available." },
+];
+
 const futureItems = [
   { title: "Transaction Broadcasting",   desc: "Devices with no internet can create and sign a transaction locally, then pass it through the mesh to a connected node that submits it to the RPC. Makes the protocol bidirectional: not just proofs coming back, but transactions going out." },
   { title: "Account State Queries",      desc: "Extend the mesh query layer beyond transaction confirmation. A device asks nearby peers for account balances, token holdings, or recent history. Peers with internet fetch, sign, and return the response — full read access without a direct connection." },
-  { title: "Offline Payment Channels",  desc: "Two devices open a payment channel over BLE and exchange signed state updates with no internet at all. Either device settles the final state on-chain when connectivity returns. No RPC is needed until settlement." },
-  { title: "Program State Queries",     desc: "Query on-chain program and smart contract state through the mesh. A device asks for the current state of a DeFi pool, an NFT collection, or any on-chain account. Peers fetch and sign the response." },
-  { title: "Peer Reputation",           desc: "Verifiers who consistently return accurate proofs accumulate on-chain reputation. Nodes that return bad proofs or go offline during a request lose standing. Shifts trust from consensus-only to track-record-backed, and lays the ground for the incentive layer." },
-  { title: "Token Incentives ($Fern)",  desc: "Reward verifiers with micro-payments or governance tokens for providing verification services to the mesh." },
-  { title: "Hardware Modules",          desc: "Dedicated Fernlink hardware for merchants and infrastructure operators, providing always-on verification nodes." },
-  { title: "Decentralized Governance",  desc: "Community-driven protocol upgrades via on-chain voting and proposal mechanisms." },
-  { title: "Cross-Chain Support",       desc: "Extend the proof and gossip layer to additional blockchain networks. The BLE mesh and Ed25519 infrastructure are not Solana-specific — only the RPC call and signature scheme change per chain." },
-  { title: "LZ4 Wire Compression",      desc: "Compress proof payloads before transmission to reduce bytes over the BLE link. Particularly useful for high-frequency DeFi operations and constrained IoT devices." },
-  { title: "AI-Powered Routing",        desc: "Machine learning models that optimize proof propagation paths based on network topology and historical patterns." },
+  { title: "Offline Payment Channels",   desc: "Two devices open a payment channel over BLE and exchange signed state updates with no internet at all. Either device settles the final state on-chain when connectivity returns. No RPC is needed until settlement." },
+  { title: "Program State Queries",      desc: "Query on-chain program and smart contract state through the mesh. A device asks for the current state of a DeFi pool, an NFT collection, or any on-chain account. Peers fetch and sign the response." },
+  { title: "Peer Reputation",            desc: "Verifiers who consistently return accurate proofs accumulate on-chain reputation. Nodes that return bad proofs or go offline during a request lose standing. Shifts trust from consensus-only to track-record-backed, and lays the ground for the incentive layer." },
+  { title: "Token Incentives ($Fern)",   desc: "Reward verifiers with micro-payments or governance tokens for providing verification services to the mesh." },
+  { title: "Hardware Modules",           desc: "Dedicated Fernlink hardware for merchants and infrastructure operators, providing always-on verification nodes." },
+  { title: "Decentralized Governance",   desc: "Community-driven protocol upgrades via on-chain voting and proposal mechanisms." },
+  { title: "Cross-Chain Support",        desc: "Extend the proof and gossip layer to additional blockchain networks. The BLE mesh and Ed25519 infrastructure are not Solana-specific — only the RPC call and signature scheme change per chain." },
+  { title: "LZ4 Wire Compression",       desc: "Compress proof payloads before transmission to reduce bytes over the BLE link. Particularly useful for high-frequency DeFi operations and constrained IoT devices." },
 ];
 
 function Block({ children }: { children: React.ReactNode }) {
@@ -138,7 +164,7 @@ export default function Docs() {
               {[
                 ["Proof Signing", "Every verification proof is signed using the verifier's Ed25519 keypair, ensuring authenticity and non-repudiation."],
                 ["Multi-Validator Consensus", "Configurable threshold, default 2+ proofs. Proofs are only accepted when enough independent verifiers agree."],
-                ["Attack Prevention", "Replay attacks mitigated via UUID deduplication with TTL. Sybil attacks addressed through consensus thresholds."],
+                ["Attack Prevention", "Replay attacks mitigated via UUID deduplication with TTL. Sybil resistance enforced by deduplicating consensus votes by verifier public key — each distinct signer counts once, regardless of message volume."],
                 ["Privacy", "No private keys are shared. Only transaction signatures and verification proofs traverse the mesh."],
               ].map(([title, desc]) => (
                 <div key={title} className="flex gap-2">
@@ -160,7 +186,7 @@ export default function Docs() {
               <table className="w-full font-mono text-sm">
                 <thead>
                   <tr className="border-b border-[#064e3b]">
-                    {["Transport", "Range", "Throughput", "Latency", "Power"].map((h) => (
+                    {["Transport", "Range", "Throughput", "Latency", "Power", "Notes"].map((h) => (
                       <th key={h} className="text-left py-3 px-4 text-[#22C55E] uppercase text-xs tracking-widest">{h}</th>
                     ))}
                   </tr>
@@ -168,11 +194,12 @@ export default function Docs() {
                 <tbody>
                   {transports.map((t) => (
                     <tr key={t.name} className="border-b border-[#064e3b]">
-                      <td className="py-3 px-4 text-[#22C55E]">{t.name}</td>
+                      <td className="py-3 px-4 text-[#22C55E] whitespace-nowrap">{t.name}</td>
                       <td className="py-3 px-4 text-[#166534]">{t.range}</td>
                       <td className="py-3 px-4 text-[#166534]">{t.throughput}</td>
                       <td className="py-3 px-4 text-[#166534]">{t.latency}</td>
                       <td className="py-3 px-4 text-[#166534]">{t.power}</td>
+                      <td className="py-3 px-4 text-[#166534] text-xs max-w-xs">{t.note}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -208,7 +235,7 @@ export default function Docs() {
               <table className="w-full font-mono text-sm">
                 <thead>
                   <tr className="border-b border-[#064e3b]">
-                    {["Platform", "Language", "Status"].map((h) => (
+                    {["Platform", "Language", "Status", "Transports"].map((h) => (
                       <th key={h} className="text-left py-3 px-4 text-[#22C55E] uppercase text-xs tracking-widest">{h}</th>
                     ))}
                   </tr>
@@ -227,6 +254,7 @@ export default function Docs() {
                           {p.status}
                         </span>
                       </td>
+                      <td className="py-3 px-4 text-[#166534] text-xs">{p.note}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -235,9 +263,16 @@ export default function Docs() {
           </Block>
 
           <Block>
-            <SectionLabel>Quick Start (Rust Core)</SectionLabel>
+            <SectionLabel>Quick Start — TypeScript</SectionLabel>
             <pre className="bg-black border border-[#064e3b] p-4 overflow-x-auto font-mono text-sm text-[#22C55E] leading-relaxed">
-              {codeExample}
+              {codeExampleTS}
+            </pre>
+          </Block>
+
+          <Block>
+            <SectionLabel>Quick Start — Rust Core</SectionLabel>
+            <pre className="bg-black border border-[#064e3b] p-4 overflow-x-auto font-mono text-sm text-[#22C55E] leading-relaxed">
+              {codeExampleRust}
             </pre>
           </Block>
         </div>
@@ -264,7 +299,24 @@ export default function Docs() {
       {active === "FUTURE" && (
         <div className="space-y-6">
           <Block>
-            <SectionLabel>Future Extensions</SectionLabel>
+            <SectionLabel>Recently Shipped</SectionLabel>
+            <div className="space-y-4">
+              {shippedItems.map((f) => (
+                <div key={f.title} className="flex gap-4 items-start border border-[#22C55E]/30 p-5 bg-[#22C55E]/5">
+                  <div className="shrink-0 font-mono text-[10px] uppercase tracking-widest text-black bg-[#22C55E] px-2 py-1 mt-0.5">
+                    SHIPPED
+                  </div>
+                  <div>
+                    <h3 className="font-mono font-semibold text-[#22C55E] mb-1">{f.title}</h3>
+                    <p className="font-mono text-sm text-[#166534] leading-relaxed">{f.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Block>
+
+          <Block>
+            <SectionLabel>Upcoming Extensions</SectionLabel>
             <div className="space-y-4">
               {futureItems.map((f, i) => (
                 <div key={f.title} className="flex gap-4 items-start border border-[#064e3b] p-5 hover:border-[#22C55E] transition-colors">

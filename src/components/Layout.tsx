@@ -8,7 +8,9 @@ const navLinks = [
   { label: "[ NETWORK ]",  to: "/about" },
   { label: "[ PROOFS ]",   to: "/docs" },
   { label: "[ PROTOCOL ]", to: "/use-cases" },
-  { label: "[ ROADMAP ]",  to: "/downloads" },
+  { label: "[ SDK ]",      to: "/downloads" },
+  { label: "[ ROADMAP ]",  to: "/roadmap" },
+  { label: "[ BLOG ]",     to: "/blog" },
   { label: "[ FAQ ]",      to: "/contact" },
 ];
 
@@ -101,7 +103,7 @@ function Footer() {
             FERNLINK_CORE
           </div>
           <p className="font-mono text-[10px] leading-relaxed uppercase text-[#166534]">
-            © 2025 FERNLINK // DECENTRALIZED RHIZOME NETWORK // SOLANA ECOSYSTEM PUBLIC GOOD // ENCRYPTION_LEVEL: MAX
+            © 2026 FERNLINK // DECENTRALIZED RHIZOME NETWORK // SOLANA ECOSYSTEM PUBLIC GOOD // PROOF_INTEGRITY: ED25519
           </p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
@@ -112,6 +114,9 @@ function Footer() {
             <a href={GITHUB} target="_blank" rel="noopener noreferrer" className="font-mono text-[10px] uppercase text-[#166534] hover:text-[#22C55E] hover:translate-x-1 transition-all">
               ./whitepaper.pdf
             </a>
+            <Link to="/roadmap" className="font-mono text-[10px] uppercase text-[#166534] hover:text-[#22C55E] hover:translate-x-1 transition-all">
+              ./roadmap
+            </Link>
           </div>
           <div className="flex flex-col gap-2">
             <a href={GITHUB} target="_blank" rel="noopener noreferrer" className="font-mono text-[10px] uppercase text-[#166534] hover:text-[#22C55E] hover:translate-x-1 transition-all">
@@ -120,6 +125,9 @@ function Footer() {
             <Link to="/downloads" className="font-mono text-[10px] uppercase text-[#166534] hover:text-[#22C55E] hover:translate-x-1 transition-all">
               ./sdk_downloads
             </Link>
+            <Link to="/blog" className="font-mono text-[10px] uppercase text-[#166534] hover:text-[#22C55E] hover:translate-x-1 transition-all">
+              ./blog
+            </Link>
           </div>
           <div className="flex flex-col gap-2">
             <Link to="/contact" className="font-mono text-[10px] uppercase text-[#166534] hover:text-[#22C55E] hover:translate-x-1 transition-all">
@@ -127,6 +135,9 @@ function Footer() {
             </Link>
             <Link to="/about" className="font-mono text-[10px] uppercase text-[#166534] hover:text-[#22C55E] hover:translate-x-1 transition-all">
               ./about
+            </Link>
+            <Link to="/use-cases" className="font-mono text-[10px] uppercase text-[#166534] hover:text-[#22C55E] hover:translate-x-1 transition-all">
+              ./use_cases
             </Link>
           </div>
         </div>

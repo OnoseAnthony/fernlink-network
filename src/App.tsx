@@ -10,6 +10,8 @@ import Docs from "./pages/Docs";
 import UseCases from "./pages/UseCases";
 import Downloads from "./pages/Downloads";
 import Contact from "./pages/Contact";
+import Roadmap from "./pages/Roadmap";
+import Blog from "./pages/Blog";
 import IntroducingFernlink from "./pages/blog/IntroducingFernlink";
 import NotFound from "./pages/NotFound";
 
@@ -29,6 +31,8 @@ const App = () => (
             <Route path="/use-cases" element={<UseCases />} />
             <Route path="/downloads" element={<Downloads />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/roadmap" element={<Roadmap />} />
+            <Route path="/blog" element={<Blog />} />
             <Route path="/blog/introducing-fernlink" element={<IntroducingFernlink />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

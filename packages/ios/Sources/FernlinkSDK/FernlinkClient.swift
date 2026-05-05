@@ -54,6 +54,13 @@ public final class FernlinkClient {
         attachTransport(ble)
     }
 
+    /// Boot Multipeer Connectivity for Apple-to-Apple high-bandwidth mesh.
+    /// Call after startMesh() if you also want BLE, or alone for Apple-only.
+    public func attachMultipeerTransport() {
+        let mpc = MultipeerTransport(localPubKey: publicKey)
+        attachTransport(mpc)
+    }
+
     /// Attach any FernlinkTransport implementation to the mesh.
     public func attachTransport(_ transport: FernlinkTransport) {
         let router = TransportMessageRouter(

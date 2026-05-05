@@ -14,6 +14,13 @@ internal object FernlinkJni {
     @JvmStatic external fun generateKeypair(): ByteArray
 
     /**
+     * Derive a keypair from a 32-byte seed.
+     * Returns 64 bytes: seed(32) + pubkey(32), where pubkey is deterministically
+     * derived from the seed — unlike generateKeypair() which ignores the seed.
+     */
+    @JvmStatic external fun keypairFromSeed(seed: ByteArray): ByteArray
+
+    /**
      * Sign a VerificationProof.
      * @param keypairSeed  32-byte Ed25519 seed
      * @param txSignature  base58 transaction signature

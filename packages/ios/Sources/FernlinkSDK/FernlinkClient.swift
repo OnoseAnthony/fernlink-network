@@ -161,8 +161,12 @@ public final class FernlinkClient {
     private func consensus(proofs: [VerificationProof], minProofs: Int) -> ConsensusResult? {
         if proofs.isEmpty { return nil }
 
+        // One vote per distinct signer — prevents a single device reaching threshold alone.
+        var seenSigners = Set<Data>()
+        let unique = proofs.filter { seenSigners.insert($0.verifierPublicKey).inserted }
+
         var tally: [(key: (TxStatus, UInt64), count: Int, blockTime: UInt64)] = []
-        for proof in proofs {
+        for proof in unique {
             let key = (proof.status, proof.slot)
             if let i = tally.firstIndex(where: { $0.key == key }) {
                 tally[i].count += 1

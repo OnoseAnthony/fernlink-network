@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 import * as net from "node:net";
-import { createFrameReader, TYPE_REQUEST, writeFrame } from "./tcp-framing.js";
+import { createFrameReader, TYPE_PROOF, TYPE_REQUEST, writeFrame } from "./tcp-framing.js";
 
 /**
  * Manages outbound TCP connections to discovered Fernlink peers.
@@ -37,6 +37,15 @@ export class TcpClient extends EventEmitter {
     const dead: string[] = [];
     this.sockets.forEach((socket, key) => {
       try { writeFrame(socket, TYPE_REQUEST, payload); }
+      catch { dead.push(key); }
+    });
+    dead.forEach((k) => { this.sockets.get(k)?.destroy(); this.sockets.delete(k); });
+  }
+
+  sendProof(payload: Buffer): void {
+    const dead: string[] = [];
+    this.sockets.forEach((socket, key) => {
+      try { writeFrame(socket, TYPE_PROOF, payload); }
       catch { dead.push(key); }
     });
     dead.forEach((k) => { this.sockets.get(k)?.destroy(); this.sockets.delete(k); });

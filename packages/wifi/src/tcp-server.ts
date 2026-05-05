@@ -4,6 +4,12 @@ import { createFrameReader, TYPE_PROOF, TYPE_REQUEST, writeFrame } from "./tcp-f
 
 /**
  * Listens for incoming TCP connections from Fernlink peers.
+ *
+ * NOTE (HIGH-4 — known limitation): all TCP connections are plaintext (no TLS).
+ * Ed25519 signatures protect proof integrity end-to-end, but a MITM on a hostile
+ * LAN can drop real proofs and substitute crafted ones (which fail verification
+ * but prevent the real ones from arriving). Upgrade path: mutual TLS using each
+ * node's identity keypair, or Noise Protocol XX handshake.
  * Emits "request" and "proof" events with the raw payload Buffer.
  * Call sendProof() to push a proof to all connected sockets.
  */
@@ -36,6 +42,15 @@ export class TcpServer extends EventEmitter {
     const dead: net.Socket[] = [];
     this.sockets.forEach((socket) => {
       try { writeFrame(socket, TYPE_PROOF, payload); }
+      catch { dead.push(socket); }
+    });
+    dead.forEach((s) => { this.sockets.delete(s); s.destroy(); });
+  }
+
+  sendRequest(payload: Buffer): void {
+    const dead: net.Socket[] = [];
+    this.sockets.forEach((socket) => {
+      try { writeFrame(socket, TYPE_REQUEST, payload); }
       catch { dead.push(socket); }
     });
     dead.forEach((s) => { this.sockets.delete(s); s.destroy(); });

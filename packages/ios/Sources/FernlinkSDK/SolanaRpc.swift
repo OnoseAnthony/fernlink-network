@@ -4,7 +4,9 @@ struct SolanaRpc {
     let endpoint: URL
 
     init(_ urlString: String) {
-        endpoint = URL(string: urlString)!
+        // Fall back to mainnet if the provided URL is malformed rather than crashing.
+        endpoint = URL(string: urlString)
+            ?? URL(string: "https://api.mainnet-beta.solana.com")!
     }
 
     func getSignatureStatus(_ signature: String) async throws -> SignatureStatus {
@@ -20,7 +22,9 @@ struct SolanaRpc {
         req.timeoutInterval = 10
 
         let (data, _) = try await URLSession.shared.data(for: req)
-        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return SignatureStatus(status: .unknown, slot: 0, blockTime: 0)
+        }
 
         if let error = json["error"] as? [String: Any],
            let msg   = error["message"] as? String {

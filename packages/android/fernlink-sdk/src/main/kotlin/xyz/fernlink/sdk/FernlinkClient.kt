@@ -36,11 +36,9 @@ class FernlinkClient(private val config: FernlinkClientConfig) {
     private val rpc   = SolanaRpc(config.rpcEndpoint)
     private val json  = Json { ignoreUnknownKeys = true }
 
-    private val keypairBytes: ByteArray = config.keypairSeed?.let { seed ->
-        val kp = FernlinkJni.generateKeypair()
-        seed.copyInto(kp, destinationOffset = 0, endIndex = 32)
-        kp
-    } ?: FernlinkJni.generateKeypair()
+    private val keypairBytes: ByteArray = config.keypairSeed
+        ?.let { seed -> FernlinkJni.keypairFromSeed(seed.sliceArray(0..31)) }
+        ?: FernlinkJni.generateKeypair()
 
     val publicKey: String
         get() = keypairBytes.drop(32).joinToString("") { "%02x".format(it) }

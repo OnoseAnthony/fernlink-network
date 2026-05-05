@@ -45,10 +45,14 @@ internal class TransportMessageRouter(
             .onEach { payload -> scope.launch { handleIncomingRequest(payload) } }
             .launchIn(scope)
 
+        // Proofs from downstream peers: verify signature, then collect + forward.
         incomingProofs
             .onEach { payload ->
-                collectedProofsList.add(String(payload, Charsets.UTF_8))
-                sendProof(payload)
+                val json = String(payload, Charsets.UTF_8)
+                if (FernlinkJni.verifyProof(json)) {
+                    collectedProofsList.add(json)
+                    sendProof(payload)
+                }
             }
             .launchIn(scope)
     }
@@ -58,7 +62,7 @@ internal class TransportMessageRouter(
             val json       = JSONObject(String(payload, Charsets.UTF_8))
             val txSig      = json.getString("txSignature")
             val commitment = json.optString("commitment", "confirmed")
-            val ttl        = json.optInt("ttl", 0)
+            val ttl        = json.optInt("ttl", 0).coerceIn(0, 8)
 
             try {
                 val status = rpc.getSignatureStatus(txSig)

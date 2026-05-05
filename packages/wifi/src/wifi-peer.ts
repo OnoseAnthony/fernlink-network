@@ -87,7 +87,7 @@ export class WifiPeer implements FernlinkPeer {
   async handleRequest(req: VerificationRequest): Promise<void> {
     const payload = Buffer.from(JSON.stringify(req));
     this.client.sendRequest(payload);
-    this.server.sendProof(payload);  // also broadcast to server-side connections
+    this.server.sendRequest(payload);
   }
 
   // ── Private ───────────────────────────────────────────────────────────────
@@ -106,7 +106,7 @@ export class WifiPeer implements FernlinkPeer {
       );
       const proofBuf = Buffer.from(JSON.stringify(proof));
       this.server.sendProof(proofBuf);
-      this.client.sendRequest(proofBuf);
+      this.client.sendProof(proofBuf);
       this.forwardProof(proofBuf);
     } catch {
       // No internet or parse error — TTL decrement forwarding handled externally

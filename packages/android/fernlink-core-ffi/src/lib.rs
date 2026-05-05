@@ -41,6 +41,38 @@ pub extern "system" fn Java_xyz_fernlink_sdk_FernlinkJni_generateKeypair<'local>
     }
 }
 
+/// Derive the Ed25519 keypair from a 32-byte seed.
+/// Returns 64 bytes: [secret_seed (32) || public_key (32)].
+/// Unlike generateKeypair(), the public key is deterministically derived from the seed.
+#[no_mangle]
+pub extern "system" fn Java_xyz_fernlink_sdk_FernlinkJni_keypairFromSeed<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    seed_bytes: JByteArray<'local>,
+) -> JByteArray<'local> {
+    let result = (|| -> Result<[u8; 64], Box<dyn std::error::Error>> {
+        let seed_vec = env.convert_byte_array(&seed_bytes)?;
+        let seed: [u8; 32] = seed_vec.try_into().map_err(|_| "seed must be 32 bytes")?;
+        let kp = Keypair::from_bytes(&seed);
+        let pubkey = kp.public_key_bytes();
+        let mut out = [0u8; 64];
+        out[..32].copy_from_slice(&seed);
+        out[32..].copy_from_slice(&pubkey);
+        Ok(out)
+    })();
+
+    match result {
+        Ok(bytes) => {
+            let bytes_i8: &[i8] = unsafe { std::slice::from_raw_parts(bytes.as_ptr() as *const i8, bytes.len()) };
+            match env.new_byte_array(64) {
+                Ok(arr) => { let _ = env.set_byte_array_region(&arr, 0, bytes_i8); arr }
+                Err(_)  => JByteArray::default(),
+            }
+        }
+        Err(e) => { jni_throw(&mut env, &e.to_string()); JByteArray::default() }
+    }
+}
+
 // ── Proof signing ─────────────────────────────────────────────────────────────
 
 /// Sign a verification proof.

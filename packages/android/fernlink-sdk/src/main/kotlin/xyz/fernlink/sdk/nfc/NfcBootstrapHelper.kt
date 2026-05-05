@@ -57,14 +57,8 @@ class NfcBootstrapHelper(
             }
         )
         adapter.enableForegroundDispatch(activity, pendingIntent, filters, null)
-
-        // Also push our own bootstrap record to any NFC-capable peer that taps us
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            @Suppress("DEPRECATION")
-            adapter.setNdefPushMessage(buildNdefMessage(), activity)
-        }
-        // Android 10+ recommends HCE for card emulation; the receiving side
-        // (enableForegroundDispatch) handles reading from the HCE card.
+        // Android Beam (setNdefPushMessage) was removed in API 33.
+        // Outbound bootstrap uses HCE; this side handles incoming reads.
     }
 
     /** Call from Activity.onPause(). Disables foreground dispatch. */

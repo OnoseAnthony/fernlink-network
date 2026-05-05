@@ -12,7 +12,7 @@ public enum TransportType: Int {
 ///
 /// TransportMessageRouter subscribes to incoming data via the two callbacks,
 /// and sends outbound data via sendProof / sendRequest.
-protocol FernlinkTransport: AnyObject {
+public protocol FernlinkTransport: AnyObject {
     var transportType: TransportType { get }
     var connectedPeerCount: Int { get }
 

@@ -1,9 +1,9 @@
 package xyz.fernlink.sdk.ble
 
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import androidx.core.app.NotificationCompat
 
 internal object ForegroundServiceNotification {
 
@@ -13,10 +13,10 @@ internal object ForegroundServiceNotification {
 
     fun notificationId() = NOTIFICATION_ID
 
-    fun build(context: Context, peerCount: Int): Notification {
+    fun build(context: Context, peerCount: Int): android.app.Notification {
         ensureChannel(context)
-        return Notification.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
+        return NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle("Fernlink")
             .setContentText(
                 if (peerCount == 0) "Scanning for peers…"

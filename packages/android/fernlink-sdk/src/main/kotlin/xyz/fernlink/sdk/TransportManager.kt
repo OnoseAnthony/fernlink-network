@@ -1,12 +1,12 @@
 package xyz.fernlink.sdk
 
+import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
 import androidx.core.content.ContextCompat
-import androidx.appcompat.app.AppCompatActivity
 import xyz.fernlink.sdk.ble.FernlinkBleService
 import xyz.fernlink.sdk.wifi.FernlinkWifiService
 
@@ -15,7 +15,7 @@ import xyz.fernlink.sdk.wifi.FernlinkWifiService
  * attaches them to [FernlinkClient], and handles the Service lifecycle.
  *
  * ```kotlin
- * class MyActivity : AppCompatActivity() {
+ * class MyActivity : Activity() {
  *     private val client  = FernlinkClient(FernlinkClientConfig(...))
  *     private val manager = TransportManager(this, client)
  *
@@ -36,7 +36,7 @@ import xyz.fernlink.sdk.wifi.FernlinkWifiService
  * must be done by the Activity before calling [startAll].
  */
 class TransportManager(
-    private val activity: AppCompatActivity,
+    private val activity: Activity,
     private val client:   FernlinkClient,
 ) {
 

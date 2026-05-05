@@ -1,23 +1,23 @@
 package xyz.fernlink.sdk.wifi
 
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import androidx.core.app.NotificationCompat
 
 internal object WifiServiceNotification {
 
     const val NOTIFICATION_ID = 1002
     private const val CHANNEL_ID = "fernlink_wifi"
 
-    fun build(context: Context, peerCount: Int): Notification {
+    fun build(context: Context, peerCount: Int): android.app.Notification {
         ensureChannel(context)
         val text = if (peerCount > 0) "WiFi peers: $peerCount" else "Scanning for WiFi peers…"
-        return Notification.Builder(context, CHANNEL_ID)
+        return NotificationCompat.Builder(context, CHANNEL_ID)
             .setContentTitle("Fernlink WiFi Direct")
             .setContentText(text)
-            .setSmallIcon(android.R.drawable.stat_sys_data_wifi)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setOngoing(true)
             .build()
     }

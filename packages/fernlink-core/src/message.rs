@@ -2,8 +2,17 @@ use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
 use uuid::Uuid;
 
-pub const PROTOCOL_VERSION: u8 = 1;
+pub const PROTOCOL_VERSION: u8 = 2;
 pub const DEFAULT_TTL: u8 = 8;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[repr(u8)]
+pub enum CompressionCodec {
+    #[default]
+    None = 0x00,
+    Lz4  = 0x01,
+    Zstd = 0x02,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[repr(u8)]
@@ -37,6 +46,7 @@ pub struct Header {
     pub message_id:   Uuid,
     pub timestamp_ms: u64,
     pub ttl:          u8,
+    pub compression:  CompressionCodec,
 }
 
 impl Header {
@@ -50,6 +60,7 @@ impl Header {
                 .unwrap_or_default()
                 .as_millis() as u64,
             ttl: DEFAULT_TTL,
+            compression: CompressionCodec::None,
         }
     }
 

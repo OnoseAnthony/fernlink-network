@@ -3,9 +3,10 @@ use jni::sys::{jboolean, jbyte, jint, jlong, jshort, jstring, JNI_FALSE, JNI_TRU
 use jni::JNIEnv;
 
 use fernlink_core::{
+    compress, decompress,
     consensus::{evaluate, ConsensusResult},
     crypto::{verify_proof, Keypair},
-    message::{Commitment, TxStatus, VerificationProof},
+    message::{Commitment, CompressionCodec, TxStatus, VerificationProof},
 };
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -188,5 +189,59 @@ pub extern "system" fn Java_xyz_fernlink_sdk_FernlinkJni_evaluateProofs<'local>(
             jni_throw(&mut env, &e.to_string());
             std::ptr::null_mut()
         }
+    }
+}
+
+// ── Compression ───────────────────────────────────────────────────────────────
+
+fn codec_from_int(codec: jint) -> CompressionCodec {
+    match codec {
+        1 => CompressionCodec::Lz4,
+        2 => CompressionCodec::Zstd,
+        _ => CompressionCodec::None,
+    }
+}
+
+fn bytes_to_jarray<'local>(env: &mut JNIEnv<'local>, data: &[u8]) -> JByteArray<'local> {
+    let data_i8: &[i8] = unsafe { std::slice::from_raw_parts(data.as_ptr() as *const i8, data.len()) };
+    match env.new_byte_array(data.len() as i32) {
+        Ok(arr) => { let _ = env.set_byte_array_region(&arr, 0, data_i8); arr }
+        Err(_)  => JByteArray::default(),
+    }
+}
+
+/// Compress `data` with the given codec (0=none, 1=lz4, 2=zstd).
+#[no_mangle]
+pub extern "system" fn Java_xyz_fernlink_sdk_FernlinkJni_compress<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    codec: jint,
+    data: JByteArray<'local>,
+) -> JByteArray<'local> {
+    let result = (|| -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+        let raw = env.convert_byte_array(&data)?;
+        Ok(compress(codec_from_int(codec), &raw)?)
+    })();
+    match result {
+        Ok(bytes) => bytes_to_jarray(&mut env, &bytes),
+        Err(e) => { jni_throw(&mut env, &e.to_string()); JByteArray::default() }
+    }
+}
+
+/// Decompress `data` with the given codec (0=none, 1=lz4, 2=zstd).
+#[no_mangle]
+pub extern "system" fn Java_xyz_fernlink_sdk_FernlinkJni_decompress<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    codec: jint,
+    data: JByteArray<'local>,
+) -> JByteArray<'local> {
+    let result = (|| -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+        let raw = env.convert_byte_array(&data)?;
+        Ok(decompress(codec_from_int(codec), &raw)?)
+    })();
+    match result {
+        Ok(bytes) => bytes_to_jarray(&mut env, &bytes),
+        Err(e) => { jni_throw(&mut env, &e.to_string()); JByteArray::default() }
     }
 }

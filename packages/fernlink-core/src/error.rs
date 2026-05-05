@@ -22,6 +22,9 @@ pub enum FernlinkError {
 
     #[error("duplicate message: {0}")]
     Duplicate(String),
+
+    #[error("compression error: {0}")]
+    Compression(String),
 }
 
 pub type Result<T> = std::result::Result<T, FernlinkError>;

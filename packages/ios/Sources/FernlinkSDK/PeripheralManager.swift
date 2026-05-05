@@ -54,7 +54,7 @@ final class FernlinkPeripheralManager: NSObject {
         statusChar = CBMutableCharacteristic(
             type:        BleUuids.charStatus,
             properties:  .read,
-            value:       #"{"version":1,"commitment":["confirmed","finalized"]}"#.data(using: .utf8),
+            value:       #"{"version":2,"commitment":["confirmed","finalized"],"compression":["lz4","zstd"]}"#.data(using: .utf8),
             permissions: .readable
         )
         let service = CBMutableService(type: BleUuids.fernlinkService, primary: true)

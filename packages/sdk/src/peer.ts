@@ -1,7 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
 import { generateKeypair, signProof, bytesToHex } from "./crypto.js";
 import { getSignatureStatus } from "./rpc.js";
-import type { VerificationRequest, VerificationProof, PeerInfo, FernlinkPeer } from "./types.js";
+import { SUPPORTED_CODECS } from "./compression.js";
+import type { CompressionCodec, VerificationRequest, VerificationProof, PeerInfo, FernlinkPeer } from "./types.js";
 
 type ProofHandler = (proof: VerificationProof) => void;
 
@@ -12,6 +13,7 @@ type ProofHandler = (proof: VerificationProof) => void;
  */
 export class SimulatedPeer implements FernlinkPeer {
   readonly info: PeerInfo;
+  readonly supportedCodecs: CompressionCodec[] = SUPPORTED_CODECS;
   private keypair = generateKeypair();
   private handlers: ProofHandler[] = [];
 

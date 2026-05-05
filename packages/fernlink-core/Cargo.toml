@@ -19,11 +19,14 @@ hex = "0.4"
 bs58 = "0.5"
 uuid = { version = "1.0", features = ["v4", "serde"] }
 thiserror = "1.0"
-reqwest = { version = "0.11", features = ["json", "blocking"], optional = true }
+reqwest  = { version = "0.11", features = ["json", "blocking"], optional = true }
+lz4_flex = { version = "0.11", optional = true }
+zstd     = { version = "0.13", default-features = false, optional = true }
 
 [features]
-default = ["rpc"]
-rpc = ["dep:reqwest"]
+default     = ["rpc", "compression"]
+rpc         = ["dep:reqwest"]
+compression = ["dep:lz4_flex", "dep:zstd"]
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }

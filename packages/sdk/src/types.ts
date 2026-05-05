@@ -2,6 +2,11 @@ export type Commitment = "processed" | "confirmed" | "finalized";
 
 export type TxStatus = "confirmed" | "failed" | "unknown";
 
+/** Wire compression codec. Defaults to "none" for backwards compatibility. */
+export type CompressionCodec = "none" | "lz4" | "zstd";
+
+export const PROTOCOL_VERSION = 2;
+
 export interface VerificationRequest {
   messageId: string;
   txSignature: string;
@@ -10,6 +15,7 @@ export interface VerificationRequest {
   originatorPublicKey: string;
   timestampMs: number;
   ttl: number;
+  compression?: CompressionCodec;
 }
 
 export interface VerificationProof {
@@ -23,6 +29,7 @@ export interface VerificationProof {
   /** Hex-encoded Ed25519 signature over the proof payload. */
   signature: string;
   timestampMs: number;
+  compression?: CompressionCodec;
 }
 
 export interface ConsensusResult {
@@ -40,6 +47,8 @@ export interface FernlinkClientOptions {
   keypairSeed?: Uint8Array;
   /** Minimum number of matching proofs required before settling. Default: 2 */
   minProofs?: number;
+  /** Compression codec to use when sending messages. Default: "lz4" */
+  compression?: CompressionCodec;
 }
 
 export interface VerifyOptions {
@@ -58,6 +67,8 @@ export interface PeerInfo {
 /** Common interface implemented by SimulatedPeer and WebBluetoothPeer. */
 export interface FernlinkPeer {
   info: PeerInfo;
+  /** Codecs this peer can decompress. Always includes "none". */
+  supportedCodecs?: CompressionCodec[];
   onProof(handler: (proof: VerificationProof) => void): void;
   handleRequest(req: VerificationRequest): Promise<void>;
 }

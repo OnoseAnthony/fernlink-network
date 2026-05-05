@@ -112,7 +112,7 @@ fn build_application(
         read: Some(bluer::gatt::local::CharacteristicRead {
             read: true,
             fun: Box::new(|_| Box::pin(async {
-                Ok(br#"{"version":1,"commitment":["confirmed","finalized"]}"#.to_vec())
+                Ok(br#"{"version":2,"commitment":["confirmed","finalized"],"compression":["lz4","zstd"]}"#.to_vec())
             })),
             ..Default::default()
         }),

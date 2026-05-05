@@ -3,7 +3,9 @@ import { generateKeypair, keypairFromSeed, signProof, verifyProof, bytesToHex } 
 import { evaluate } from "./consensus.js";
 import { getSignatureStatus } from "./rpc.js";
 import { SimulatedPeer } from "./peer.js";
+import { negotiateCodec, SUPPORTED_CODECS } from "./compression.js";
 import type {
+  CompressionCodec,
   FernlinkClientOptions,
   FernlinkPeer,
   VerifyOptions,
@@ -17,13 +19,15 @@ export class FernlinkClient {
   private keypair;
   private rpcEndpoint: string;
   private minProofs: number;
+  private compression: CompressionCodec;
   private peers: FernlinkPeer[] = [];
   private started = false;
 
   constructor(opts: FernlinkClientOptions) {
     this.rpcEndpoint = opts.rpcEndpoint;
-    this.minProofs = opts.minProofs ?? 2;
-    this.keypair = opts.keypairSeed
+    this.minProofs   = opts.minProofs ?? 2;
+    this.compression = opts.compression ?? "lz4";
+    this.keypair     = opts.keypairSeed
       ? keypairFromSeed(opts.keypairSeed)
       : generateKeypair();
   }
@@ -76,14 +80,19 @@ export class FernlinkClient {
     const timeoutMs  = opts.timeoutMs  ?? 30_000;
     const minProofs  = opts.minProofs  ?? this.minProofs;
 
+    // Negotiate the best codec each connected peer supports
+    const peerCodecs = this.peers.flatMap(p => p.supportedCodecs ?? (["none"] as CompressionCodec[]));
+    const codec = negotiateCodec(this.compression, peerCodecs.length ? peerCodecs : SUPPORTED_CODECS);
+
     const request: VerificationRequest = {
-      messageId:          uuidv4(),
+      messageId:           uuidv4(),
       txSignature,
       commitment,
       timeoutMs,
       originatorPublicKey: this.publicKey,
       timestampMs:         Date.now(),
       ttl:                 8,
+      compression:         codec,
     };
 
     const collectedProofs: VerificationProof[] = [];

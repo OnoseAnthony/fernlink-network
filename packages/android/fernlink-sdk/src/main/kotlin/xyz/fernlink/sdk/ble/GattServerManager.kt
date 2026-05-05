@@ -94,7 +94,10 @@ internal class GattServerManager(private val context: Context) {
             BleUuids.CHAR_STATUS,
             BluetoothGattCharacteristic.PROPERTY_READ,
             BluetoothGattCharacteristic.PERMISSION_READ,
-        ).apply { value = byteArrayOf(0x01) }
+        ).apply {
+            value = """{"version":2,"commitment":["confirmed","finalized"],"compression":["lz4","zstd"]}"""
+                .toByteArray(Charsets.UTF_8)
+        }
 
         service.addCharacteristic(request)
         service.addCharacteristic(proof)

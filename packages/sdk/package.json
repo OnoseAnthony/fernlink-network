@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@solana/web3.js": "^1.98.0",
+    "lz4js": "^0.2.0",
     "tweetnacl": "^1.0.3",
     "uuid": "^11.1.0"
   },

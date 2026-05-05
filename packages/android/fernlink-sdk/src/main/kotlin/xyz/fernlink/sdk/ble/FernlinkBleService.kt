@@ -5,6 +5,8 @@ import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
 import kotlinx.coroutines.*
+import xyz.fernlink.sdk.transport.FernlinkTransport
+import xyz.fernlink.sdk.transport.TransportType
 
 /**
  * Foreground Android Service that hosts the Fernlink BLE mesh layer.
@@ -23,7 +25,9 @@ import kotlinx.coroutines.*
  * startForegroundService(Intent(this, FernlinkBleService::class.java))
  * ```
  */
-class FernlinkBleService : Service() {
+class FernlinkBleService : Service(), FernlinkTransport {
+
+    override val transportType: TransportType get() = TransportType.BLE
 
     inner class LocalBinder : Binder() {
         val service: FernlinkBleService get() = this@FernlinkBleService
@@ -65,7 +69,7 @@ class FernlinkBleService : Service() {
 
     // ── Public API (called by FernlinkClient after binding) ───────────────────
 
-    fun startMesh(keypairSeed: ByteArray, rpcEndpoint: String) {
+    override fun startMesh(keypairSeed: ByteArray, rpcEndpoint: String) {
         if (initialised) return
         this.keypairSeed = keypairSeed.copyOf()
         router = BleMessageRouter(server, client, store, this.keypairSeed, rpcEndpoint, scope)
@@ -76,28 +80,28 @@ class FernlinkBleService : Service() {
         updateNotification()
     }
 
-    fun stopMesh() {
+    override fun stopMesh() {
         if (!initialised) return
         client.stop()
         server.stop()
         initialised = false
     }
 
-    val connectedPeerCount: Int
+    override val connectedPeerCount: Int
         get() = if (initialised) client.connectedPeerCount else 0
 
-    val pendingRequestCount: Int
+    override val pendingRequestCount: Int
         get() = if (initialised) store.size else 0
 
-    fun broadcastRequest(txSignature: String, commitment: String = "confirmed", ttl: Int = 8) {
+    override fun broadcastRequest(txSignature: String, commitment: String, ttl: Int) {
         if (!initialised) return
         router.broadcastRequest(txSignature, commitment, ttl)
     }
 
-    fun collectConsensusJson(minProofs: Int): String? =
+    override fun collectConsensusJson(minProofs: Int): String? =
         if (initialised) router.collectConsensusJson(minProofs) else null
 
-    fun clearProofs() { if (initialised) router.clearProofs() }
+    override fun clearProofs() { if (initialised) router.clearProofs() }
 
     private fun updateNotification() {
         scope.launch {

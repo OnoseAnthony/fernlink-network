@@ -3,6 +3,7 @@ mod fragmentation;
 mod peripheral;
 mod rpc;
 mod router;
+mod transport;
 mod uuids;
 
 use std::sync::Arc;
@@ -10,26 +11,23 @@ use std::sync::Arc;
 use anyhow::Result;
 use clap::Parser;
 use fernlink_core::crypto::Keypair;
-use tokio::sync::Mutex;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
+
+use transport::TransportHandle;
 
 #[derive(Parser)]
 #[command(name = "fernlink-node", about = "Fernlink desktop BLE mesh node")]
 struct Cli {
-    /// Solana RPC endpoint
     #[arg(long, default_value = "https://api.mainnet-beta.solana.com")]
     rpc: String,
 
-    /// 32-byte hex keypair seed (a fresh one is generated if omitted)
     #[arg(long)]
     seed: Option<String>,
 
-    /// Device name advertised over BLE (Linux peripheral only)
     #[arg(long, default_value = "Fernlink Node")]
     name: String,
 
-    /// Minimum matching proofs required for consensus
     #[arg(long, default_value_t = 2)]
     min_proofs: usize,
 }
@@ -55,66 +53,85 @@ async fn main() -> Result<()> {
     let pubkey: String = keypair.public_key_bytes().iter().map(|b| format!("{b:02x}")).collect();
     info!("public key: {pubkey}");
 
-    // ── Central (cross-platform scanner + client) ─────────────────────────────
+    let mut ble_handle = build_ble_transport(&cli.name).await?;
+    router::run_router(&mut ble_handle, &keypair, &cli.rpc).await;
+
+    let proof_store = Arc::clone(&ble_handle.proof_store);
+
+    loop {
+        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+        let peers  = (ble_handle.connected_peer_count)();
+        let proofs = proof_store.lock().await.len();
+        info!("peers: {peers}  proofs collected: {proofs}");
+    }
+}
+
+/// Build a TransportHandle over BLE (central always-on; peripheral on Linux only).
+async fn build_ble_transport(name: &str) -> Result<TransportHandle> {
     let (central, proof_rx) = central::FernlinkCentral::new().await?;
     let central = Arc::new(central);
     central.start_scanning().await?;
 
-    let proof_store: router::ProofStore = Arc::new(Mutex::new(vec![]));
+    let peer_count = {
+        let c = Arc::clone(&central);
+        Arc::new(move || {
+            // connected_peer_count is async; we use a blocking snapshot via try_lock
+            // In practice this is called from the status loop, never in hot path.
+            futures::executor::block_on(c.connected_peer_count())
+        }) as Arc<dyn Fn() -> usize + Send + Sync>
+    };
 
-    // ── Linux: peripheral (GATT server + advertiser) ──────────────────────────
-    #[cfg(target_os = "linux")]
-    let (peripheral, request_rx) = peripheral::FernlinkPeripheral::start(&cli.name).await?;
-    #[cfg(target_os = "linux")]
-    let peripheral = Arc::new(peripheral);
+    let send_request = {
+        let c = Arc::clone(&central);
+        Arc::new(move |data: Vec<u8>| {
+            let c2 = Arc::clone(&c);
+            Box::pin(async move {
+                c2.broadcast_request(&data).await
+            }) as std::pin::Pin<Box<dyn std::future::Future<Output = anyhow::Result<()>> + Send>>
+        }) as transport::SendFn
+    };
 
-    // ── Task: handle incoming REQUEST writes from the GATT server (Linux) ─────
-    #[cfg(target_os = "linux")]
-    {
-        let central2    = Arc::clone(&central);
-        let peripheral2 = Arc::clone(&peripheral);
-        let rpc_url     = cli.rpc.clone();
-        let seed        = keypair.signing_key.to_bytes();
-        let mut req_rx  = request_rx;
-
-        tokio::spawn(async move {
-            let kp = Keypair::from_bytes(&seed);
-            while let Some(payload) = req_rx.recv().await {
-                let c = Arc::clone(&central2);
-                let p = Arc::clone(&peripheral2);
-                let url = rpc_url.clone();
-                let seed2 = kp.signing_key.to_bytes();
-                tokio::spawn(async move {
-                    let kp2 = Keypair::from_bytes(&seed2);
-                    if let Err(e) = router::handle_request(payload, &kp2, &url, &c, &p).await {
-                        tracing::warn!("request handler error: {e}");
-                    }
-                });
-            }
-        });
-    }
-
-    // ── Task: collect proofs from peers, forward upstream (Linux) ────────────
+    // On Linux: peripheral available (GATT server + advertiser)
     #[cfg(target_os = "linux")]
     {
-        let store       = Arc::clone(&proof_store);
-        let peripheral2 = Arc::clone(&peripheral);
-        tokio::spawn(router::collect_proofs(proof_rx, store, peripheral2));
+        let (peripheral, request_rx) =
+            peripheral::FernlinkPeripheral::start(name).await?;
+        let peripheral = Arc::new(peripheral);
+
+        let send_proof = {
+            let p = Arc::clone(&peripheral);
+            Arc::new(move |data: Vec<u8>| {
+                let p2 = Arc::clone(&p);
+                Box::pin(async move {
+                    p2.send_proof(&data).await
+                }) as std::pin::Pin<Box<dyn std::future::Future<Output = anyhow::Result<()>> + Send>>
+            }) as transport::SendFn
+        };
+
+        return Ok(TransportHandle::new(
+            Some(request_rx),
+            proof_rx,
+            send_proof,
+            send_request,
+            peer_count,
+        ));
     }
 
-    // ── macOS / Windows: central-only, no advertising ─────────────────────────
+    // macOS / Windows: central-only, no peripheral advertising
     #[cfg(not(target_os = "linux"))]
     {
-        let store = Arc::clone(&proof_store);
-        tokio::spawn(router::collect_proofs(proof_rx, store));
-        info!("peripheral role requires Linux; running as central-only (scan + verify for others)");
-    }
+        info!("peripheral role requires Linux; running as central-only");
+        let send_proof = Arc::new(|_data: Vec<u8>| {
+            Box::pin(async { Ok(()) })
+                as std::pin::Pin<Box<dyn std::future::Future<Output = anyhow::Result<()>> + Send>>
+        }) as transport::SendFn;
 
-    // ── Status loop ───────────────────────────────────────────────────────────
-    loop {
-        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-        let peers = central.connected_peer_count().await;
-        let proofs = proof_store.lock().await.len();
-        info!("peers: {peers}  proofs collected: {proofs}");
+        Ok(TransportHandle::new(
+            None,
+            proof_rx,
+            send_proof,
+            send_request,
+            peer_count,
+        ))
     }
 }

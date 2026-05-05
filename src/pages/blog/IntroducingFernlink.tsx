@@ -36,9 +36,9 @@ export default function IntroducingFernlink() {
 
       {/* Breadcrumb */}
       <div className="font-mono text-[10px] text-[#166534] uppercase tracking-widest mb-8 flex items-center gap-2">
-        <Link to="/downloads" className="hover:text-[#22C55E] transition-colors">ROADMAP</Link>
+        <Link to="/blog" className="hover:text-[#22C55E] transition-colors">BLOG</Link>
         <span>/</span>
-        <span className="text-[#22C55E]">BLOG</span>
+        <span className="text-[#22C55E]">INTRODUCING FERNLINK</span>
       </div>
 
       {/* Header */}

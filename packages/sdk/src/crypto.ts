@@ -20,6 +20,13 @@ export function keypairFromSeed(seed: Uint8Array): Keypair {
 /**
  * Canonical byte encoding of the fields covered by the Ed25519 signature.
  * txSignature is included as UTF-8 bytes (Solana base58 strings are safe ASCII).
+ *
+ * NOTE (HIGH-2): The Rust `fernlink-core` stores tx_signature as [u8; 64] and
+ * therefore only encodes the first 64 bytes of the base58 string (Solana sigs
+ * are 87-88 chars). This means Rust-signed proofs cannot be verified here and
+ * vice versa. Resolution requires either (a) changing Rust to use [u8; 88] or
+ * a String field, or (b) changing TypeScript to base58-decode. A protocol-level
+ * decision is needed before cross-platform verification is deployed.
  */
 function proofSignableBytes(
   txSignature: string,

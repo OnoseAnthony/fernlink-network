@@ -3,24 +3,76 @@ use std::sync::Arc;
 use anyhow::Result;
 use fernlink_core::{crypto::Keypair, message::TxStatus as CoreTxStatus};
 use serde_json::Value;
-use tokio::sync::{mpsc, Mutex};
 use tracing::{info, warn};
 
-use crate::central::FernlinkCentral;
 use crate::rpc::{self, TxStatus};
+use crate::transport::TransportHandle;
 
-pub type ProofStore = Arc<Mutex<Vec<String>>>;
+/// Drive the full message-routing loop for a single transport.
+///
+/// Spawns two tasks:
+/// - request handler: for each incoming REQUEST, verify via RPC, sign and
+///   send a proof, or forward with TTL-1 if no internet.
+/// - proof collector: for each incoming PROOF, store it and forward upstream.
+pub async fn run_router(handle: &mut TransportHandle, keypair: &Keypair, rpc_url: &str) {
+    let seed = keypair.signing_key.to_bytes();
 
-/// Handle one reassembled REQUEST payload from a peer:
+    // ── Request handler ───────────────────────────────────────────────────────
+    if let Some(mut req_rx) = handle.request_rx.take() {
+        let send_proof   = Arc::clone(&handle.send_proof);
+        let send_request = Arc::clone(&handle.send_request);
+        let url          = rpc_url.to_string();
+
+        tokio::spawn(async move {
+            let kp = Keypair::from_bytes(&seed);
+            while let Some(payload) = req_rx.recv().await {
+                let sp  = Arc::clone(&send_proof);
+                let sr  = Arc::clone(&send_request);
+                let u   = url.clone();
+                let s   = kp.signing_key.to_bytes();
+                tokio::spawn(async move {
+                    let kp2 = Keypair::from_bytes(&s);
+                    if let Err(e) = handle_request(payload, &kp2, &u, sp, sr).await {
+                        warn!("request handler error: {e}");
+                    }
+                });
+            }
+        });
+    }
+
+    // ── Proof collector ───────────────────────────────────────────────────────
+    {
+        let mut proof_rx  = {
+            // We can't move out of handle directly since we might call this
+            // multiple times in future, so replace with a dummy channel.
+            let (_, dummy_rx) = tokio::sync::mpsc::channel(1);
+            std::mem::replace(&mut handle.proof_rx, dummy_rx)
+        };
+        let store      = Arc::clone(&handle.proof_store);
+        let send_proof = Arc::clone(&handle.send_proof);
+
+        tokio::spawn(async move {
+            while let Some(proof_bytes) = proof_rx.recv().await {
+                if let Ok(s) = std::str::from_utf8(&proof_bytes) {
+                    store.lock().await.push(s.to_string());
+                }
+                if let Err(e) = (send_proof)(proof_bytes).await {
+                    warn!("upstream proof forward error: {e}");
+                }
+            }
+        });
+    }
+}
+
+/// Handle one reassembled REQUEST payload:
 /// 1. Verify via Solana RPC — sign and push a proof if successful.
-/// 2. On RPC failure (no internet), forward the request with TTL - 1.
+/// 2. On RPC failure, forward the request with TTL-1.
 pub async fn handle_request(
-    payload:  Vec<u8>,
-    keypair:  &Keypair,
-    rpc_url:  &str,
-    central:  &Arc<FernlinkCentral>,
-    #[cfg(target_os = "linux")]
-    peripheral: &Arc<crate::peripheral::FernlinkPeripheral>,
+    payload:      Vec<u8>,
+    keypair:      &Keypair,
+    rpc_url:      &str,
+    send_proof:   crate::transport::SendFn,
+    send_request: crate::transport::SendFn,
 ) -> Result<()> {
     let json: Value = serde_json::from_slice(&payload)?;
     let tx_sig = json["txSignature"].as_str().unwrap_or("").to_string();
@@ -33,47 +85,28 @@ pub async fn handle_request(
                 TxStatus::Failed    => CoreTxStatus::Failed,
                 TxStatus::Unknown   => CoreTxStatus::Unknown,
             };
-            let proof = keypair.sign_proof(tx_sig_to_bytes(&tx_sig), core_status, status.slot, status.block_time, 0);
+            let proof = keypair.sign_proof(
+                tx_sig_to_bytes(&tx_sig), core_status,
+                status.slot, status.block_time, 0,
+            );
             let proof_bytes = serde_json::to_vec(&proof)?;
             info!("verified {tx_sig}, sending proof");
-
-            #[cfg(target_os = "linux")]
-            peripheral.send_proof(&proof_bytes).await?;
+            send_proof(proof_bytes).await?;
         }
         Err(e) => {
             warn!("RPC failed ({e}), forwarding request (ttl={ttl})");
             if ttl > 0 {
                 let mut forwarded = json.clone();
                 forwarded["ttl"] = Value::from(ttl - 1);
-                central.broadcast_request(forwarded.to_string().as_bytes()).await?;
+                send_request(forwarded.to_string().into_bytes()).await?;
             }
         }
     }
     Ok(())
 }
 
-/// Drive the proof collection loop. Runs until the sender side is dropped.
-/// Stores each incoming proof and forwards it back upstream (multi-hop return).
-pub async fn collect_proofs(
-    mut proof_rx: mpsc::Receiver<Vec<u8>>,
-    store: ProofStore,
-    #[cfg(target_os = "linux")]
-    peripheral: Arc<crate::peripheral::FernlinkPeripheral>,
-) {
-    while let Some(proof_bytes) = proof_rx.recv().await {
-        if let Ok(s) = std::str::from_utf8(&proof_bytes) {
-            store.lock().await.push(s.to_string());
-        }
-        // Forward the proof back upstream so multi-hop return (C → B → A) works.
-        #[cfg(target_os = "linux")]
-        if let Err(e) = peripheral.send_proof(&proof_bytes).await {
-            warn!("upstream proof forward error: {e}");
-        }
-    }
-}
-
 /// Evaluate stored proofs for consensus. Returns a JSON summary or None.
-pub async fn evaluate_proofs(store: &ProofStore, min_proofs: usize) -> Option<String> {
+pub async fn evaluate_proofs(store: &crate::transport::ProofStore, min_proofs: usize) -> Option<String> {
     use fernlink_core::{consensus, crypto, message::Commitment};
 
     let stored = store.lock().await.clone();
@@ -89,19 +122,17 @@ pub async fn evaluate_proofs(store: &ProofStore, min_proofs: usize) -> Option<St
     match consensus::evaluate(&verified, Commitment::Confirmed) {
         consensus::ConsensusResult::Settled { status, slot, block_time } => {
             Some(serde_json::json!({
-                "settled":     true,
-                "status":      format!("{status:?}"),
-                "slot":        slot,
-                "blockTime":   block_time,
-                "proofCount":  verified.len(),
+                "settled":    true,
+                "status":     format!("{status:?}"),
+                "slot":       slot,
+                "blockTime":  block_time,
+                "proofCount": verified.len(),
             }).to_string())
         }
         _ => None,
     }
 }
 
-/// Solana tx signatures are base58 ASCII strings (~88 chars). Pad/truncate to
-/// the 64-byte array expected by the fernlink-core proof struct.
 fn tx_sig_to_bytes(sig: &str) -> [u8; 64] {
     let mut out = [0u8; 64];
     let b = sig.as_bytes();

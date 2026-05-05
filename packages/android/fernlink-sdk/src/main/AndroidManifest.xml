@@ -21,12 +21,37 @@
     <!-- Required for foreground service on Android 9+ -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+
+    <!-- WiFi Direct -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- API < 33: location required for WiFi Direct peer discovery -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"
+        android:maxSdkVersion="32" />
+    <!-- API >= 33: granular nearby devices permission, no location needed -->
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
+        android:usesPermissionFlags="neverForLocation"
+        tools:targetApi="33" />
+
+    <!-- NFC -->
+    <uses-permission android:name="android.permission.NFC" />
+    <uses-feature android:name="android.hardware.nfc" android:required="false" />
 
     <application>
         <service
             android:name="xyz.fernlink.sdk.ble.FernlinkBleService"
             android:exported="false"
             android:foregroundServiceType="connectedDevice" />
+
+        <!-- WiFi Direct service — foregroundServiceType="location" required
+             on Android 14+ for services that trigger peer discovery -->
+        <service
+            android:name="xyz.fernlink.sdk.wifi.FernlinkWifiService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
     </application>
 
 </manifest>

@@ -25,10 +25,16 @@ internal class SolanaRpc(private val endpoint: String) {
     )
 
     suspend fun getSignatureStatus(signature: String): SignatureStatus = withContext(Dispatchers.IO) {
-        val body = """
-            {"jsonrpc":"2.0","id":1,"method":"getSignatureStatuses",
-             "params":[["$signature"],{"searchTransactionHistory":true}]}
-        """.trimIndent().toRequestBody(json)
+        val bodyObj = JSONObject().apply {
+            put("jsonrpc", "2.0")
+            put("id", 1)
+            put("method", "getSignatureStatuses")
+            put("params", org.json.JSONArray().apply {
+                put(org.json.JSONArray().apply { put(signature) })
+                put(JSONObject().apply { put("searchTransactionHistory", true) })
+            })
+        }
+        val body = bodyObj.toString().toRequestBody(json)
 
         val request = Request.Builder().url(endpoint).post(body).build()
         val response = client.newCall(request).execute()

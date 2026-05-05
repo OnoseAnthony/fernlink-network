@@ -46,12 +46,14 @@ internal class BleMessageRouter(
             .onEach { payload -> scope.launch { handleIncomingRequest(payload) } }
             .launchIn(scope)
 
-        // Proofs from downstream peers: collect locally AND forward back upstream.
-        // This is the return path for multi-hop: C → B → A.
+        // Proofs from downstream peers: verify signature, then collect + forward.
         client.incomingProofs
             .onEach { payload ->
-                collectedProofsList.add(String(payload, Charsets.UTF_8))
-                server.sendProof(payload)
+                val json = String(payload, Charsets.UTF_8)
+                if (FernlinkJni.verifyProof(json)) {
+                    collectedProofsList.add(json)
+                    server.sendProof(payload)
+                }
             }
             .launchIn(scope)
     }
@@ -61,7 +63,7 @@ internal class BleMessageRouter(
             val json       = JSONObject(String(payload, Charsets.UTF_8))
             val txSig      = json.getString("txSignature")
             val commitment = json.optString("commitment", "confirmed")
-            val ttl        = json.optInt("ttl", 0)
+            val ttl        = json.optInt("ttl", 0).coerceIn(0, 8)
 
             try {
                 // Independently verify by calling Solana RPC ourselves

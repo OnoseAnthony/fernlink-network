@@ -29,9 +29,14 @@ pub fn evaluate(proofs: &[VerificationProof], required_commitment: Commitment) -
         }
     }
 
-    // Rule 2: find the (status, slot) pair with the most votes.
+    // Rule 2: one vote per distinct verifier — deduplicate by public key first.
+    let mut seen_keys: std::collections::HashSet<[u8; 32]> = std::collections::HashSet::new();
+    let unique: Vec<&VerificationProof> = proofs.iter()
+        .filter(|p| seen_keys.insert(p.verifier_pubkey))
+        .collect();
+
     let mut tally: std::collections::HashMap<(u8, u64), (u32, u64)> = std::collections::HashMap::new();
-    for p in proofs {
+    for p in &unique {
         let key = (p.status as u8, p.slot);
         let entry = tally.entry(key).or_insert((0, p.block_time));
         entry.0 += 1;
@@ -57,6 +62,12 @@ mod tests {
     use crate::message::{Header, MessageType};
 
     fn make_proof(status: TxStatus, slot: u64) -> VerificationProof {
+        make_proof_for(status, slot, 0x00)
+    }
+
+    fn make_proof_for(status: TxStatus, slot: u64, pubkey_seed: u8) -> VerificationProof {
+        let mut pubkey = [0u8; 32];
+        pubkey[0] = pubkey_seed;
         VerificationProof {
             header: Header::new(MessageType::Proof),
             tx_signature: [0u8; 64],
@@ -64,7 +75,7 @@ mod tests {
             slot,
             block_time: 0,
             error_code: 0,
-            verifier_pubkey: [0u8; 32],
+            verifier_pubkey: pubkey,
             signature: [0u8; 64],
         }
     }
@@ -72,8 +83,8 @@ mod tests {
     #[test]
     fn two_matching_proofs_settle() {
         let proofs = vec![
-            make_proof(TxStatus::Confirmed, 100),
-            make_proof(TxStatus::Confirmed, 100),
+            make_proof_for(TxStatus::Confirmed, 100, 0x01),
+            make_proof_for(TxStatus::Confirmed, 100, 0x02),
         ];
         match evaluate(&proofs, Commitment::Confirmed) {
             ConsensusResult::Settled { status, slot, .. } => {
@@ -87,6 +98,16 @@ mod tests {
     #[test]
     fn single_proof_is_pending() {
         let proofs = vec![make_proof(TxStatus::Confirmed, 100)];
+        assert_eq!(evaluate(&proofs, Commitment::Confirmed), ConsensusResult::Pending);
+    }
+
+    #[test]
+    fn duplicate_signer_does_not_settle() {
+        // Same pubkey sending the same status twice must not reach threshold.
+        let proofs = vec![
+            make_proof_for(TxStatus::Confirmed, 100, 0x01),
+            make_proof_for(TxStatus::Confirmed, 100, 0x01),
+        ];
         assert_eq!(evaluate(&proofs, Commitment::Confirmed), ConsensusResult::Pending);
     }
 

@@ -12,9 +12,17 @@ export function evaluate(
     return { settled: false, proofCount: 0 };
   }
 
+  // One vote per distinct signer — prevents a single device from reaching threshold alone.
+  const seenSigners = new Set<string>();
+  const unique = proofs.filter(p => {
+    if (!p.verifierPublicKey || seenSigners.has(p.verifierPublicKey)) return false;
+    seenSigners.add(p.verifierPublicKey);
+    return true;
+  });
+
   const tally = new Map<string, { count: number; status: TxStatus; slot: number; blockTime: number }>();
 
-  for (const p of proofs) {
+  for (const p of unique) {
     const key = `${p.status}:${p.slot}`;
     const entry = tally.get(key);
     if (entry) {

@@ -8,7 +8,7 @@ const faqs = [
   },
   {
     q: "Is Fernlink secure?",
-    a: "Yes. All proofs are Ed25519 signed, and the protocol uses multi-validator consensus (2+ matching proofs), UUID-based deduplication with TTL to prevent replays, and gossip-based propagation with hop limits.",
+    a: "Yes. Every verification proof is Ed25519-signed by the issuing node's identity keypair, ensuring authenticity and non-repudiation at the application layer regardless of transport. Consensus requires 2+ matching proofs from distinct verifier keypairs — a single node cannot reach quorum by flooding duplicates. UUID-based deduplication with TTL prevents replay attacks, and hop limits contain gossip propagation. Note that BLE and TCP transports carry plaintext frames; the security guarantee is proof integrity, not transport confidentiality. Since Solana transaction data is public on-chain, this is an accepted tradeoff at this stage of the protocol.",
   },
   {
     q: "What happens when there's no internet?",
@@ -16,7 +16,7 @@ const faqs = [
   },
   {
     q: "Which transports are supported?",
-    a: "BLE 5.0 is the primary transport, implemented natively on Android (GATT), iOS (CoreBluetooth), and desktop Linux/macOS/Windows (btleplug). Web browsers connect as BLE centrals via the Web Bluetooth API in Chrome and Edge. WiFi Direct and NFC are on the roadmap.",
+    a: "Three transports are fully implemented. BLE 5.0 is the primary mesh transport — available natively on Android (GATT server and client), iOS (CoreBluetooth and Multipeer Connectivity), and Linux/macOS/Windows desktop (btleplug). Web browsers connect as BLE centrals via the Web Bluetooth API in Chrome and Edge. WiFi/TCP with mDNS peer discovery is available on TypeScript (Node.js) and the Rust desktop binary — peers advertise on the local network via _fernlink._tcp.local. and connect automatically with no manual configuration. NFC is implemented as a bootstrapping mechanism on Android and iOS: a tap exchanges the BLE address and public key, reducing peer discovery from several seconds to under 200ms. The BLE connection then carries all subsequent proof traffic.",
   },
   {
     q: "Is Fernlink open source?",

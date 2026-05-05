@@ -21,7 +21,7 @@ const problems = [
 const analogy = [
   {
     label: "Airborne Spores → Wireless Transport",
-    desc: "Just as ferns release spores into the air that drift to new locations, Fernlink broadcasts verification proofs wirelessly via BLE, WiFi Direct, and NFC. Proofs travel from device to device without infrastructure, reaching wherever the mesh extends.",
+    desc: "Just as ferns release spores into the air that drift to new locations, Fernlink broadcasts verification proofs wirelessly via BLE, WiFi/TCP, and NFC. Proofs travel from device to device without infrastructure, reaching wherever the mesh extends.",
   },
   {
     label: "Rhizome Network → Mesh Propagation",
@@ -93,6 +93,44 @@ export default function About() {
         </div>
       </section>
 
+      {/* What's Been Built */}
+      <section className="py-16 border-b border-[#064e3b]">
+        <div className="font-mono text-[#22C55E] text-sm uppercase tracking-widest mb-4">
+          // SHIPPED
+        </div>
+        <h2 className="font-mono font-semibold text-3xl text-[#22C55E] mb-10 data-glow">
+          What's Been Built
+        </h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            {
+              label: "Android BLE Transport",
+              desc: "Native Kotlin GATT server and client, foreground BLE service, NFC bootstrapping for sub-200ms pairing, and a TransportManager that orchestrates both BLE and WiFi simultaneously.",
+            },
+            {
+              label: "iOS Transport",
+              desc: "Swift SDK using CoreBluetooth and Multipeer Connectivity, NFC bootstrap via CoreNFC, and a unified client API matching the Android and TypeScript interfaces.",
+            },
+            {
+              label: "WiFi / TCP Transport",
+              desc: "TypeScript and Rust desktop implementations using TCP with mDNS peer discovery. Peers advertise via _fernlink._tcp.local. and connect automatically on the same LAN.",
+            },
+            {
+              label: "Rust Core & Desktop",
+              desc: "Ed25519 proof signing and verification, stateless consensus, UUID-based gossip deduplication — all in a Rust crate published to crates.io. Desktop binary runs BLE and WiFi simultaneously.",
+            },
+          ].map((item) => (
+            <div key={item.label} className="bg-black border border-[#064e3b] p-6 terminal-border">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-[#22C55E] text-xs animate-pulse">▶</span>
+                <h3 className="font-mono font-semibold text-[#22C55E] text-sm">{item.label}</h3>
+              </div>
+              <p className="font-mono text-xs text-[#166534] leading-relaxed">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Open Source */}
       <section className="py-16">
         <div className="font-mono text-[#22C55E] text-sm uppercase tracking-widest mb-4">
@@ -105,12 +143,12 @@ export default function About() {
           <p className="font-mono text-[#166534] leading-relaxed mb-4">
             Fernlink is built in the open under the{" "}
             <span className="text-[#22C55E]">Apache 2.0 License</span>.
-            We welcome contributions from developers, researchers, and anyone passionate
-            about decentralized infrastructure.
+            The full monorepo — Rust core, TypeScript SDK, Android SDK, iOS SDK, BLE and WiFi transports,
+            and a live devnet demo — is available on GitHub and open for contributions.
           </p>
           <p className="font-mono text-sm text-[#166534]">
-            Join our Discord, open an issue on GitHub, or submit a pull request.
-            Together we can make Solana more resilient and accessible.
+            Open an issue, submit a pull request, or reach out directly. Every layer of the
+            protocol is documented and testable without hardware.
           </p>
           <div className="mt-6 pt-6 border-t border-[#064e3b]">
             <a

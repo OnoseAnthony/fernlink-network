@@ -4,7 +4,12 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import org.json.JSONArray
 import org.json.JSONObject
+import android.app.Activity
+import android.bluetooth.BluetoothAdapter
 import xyz.fernlink.sdk.ble.FernlinkBleService
+import xyz.fernlink.sdk.nfc.NfcBootstrapHelper
+import xyz.fernlink.sdk.transport.FernlinkTransport
+import xyz.fernlink.sdk.transport.TransportType
 
 /**
  * FernlinkClient is the main entry point for the Fernlink Android SDK.
@@ -18,15 +23,12 @@ import xyz.fernlink.sdk.ble.FernlinkBleService
  *
  * With BLE mesh (bind FernlinkBleService first, then attach):
  * ```kotlin
- * client.attachBleService(bleService)   // call from onServiceConnected
+ * client.attachTransport(bleService)   // call from onServiceConnected
  * val result = client.verifyTransaction(txSignature)
  * ```
  *
- * When BLE peers are connected, verifyTransaction() broadcasts the request into
- * the mesh. Peers independently call Solana RPC, sign the result, and return
- * cryptographic proofs. If a peer has no internet it forwards the request further
- * through the mesh (multi-hop) until a device with connectivity is reached.
- * Your device only falls back to direct RPC if no peers respond within timeoutMs.
+ * Multiple transports can be attached simultaneously. WiFi Direct is preferred
+ * over BLE when both are connected (higher bandwidth, longer range).
  */
 class FernlinkClient(private val config: FernlinkClientConfig) {
 
@@ -34,46 +36,95 @@ class FernlinkClient(private val config: FernlinkClientConfig) {
     private val rpc   = SolanaRpc(config.rpcEndpoint)
     private val json  = Json { ignoreUnknownKeys = true }
 
-    private val keypairBytes: ByteArray = config.keypairSeed?.let { seed ->
-        val kp = FernlinkJni.generateKeypair()
-        seed.copyInto(kp, destinationOffset = 0, endIndex = 32)
-        kp
-    } ?: FernlinkJni.generateKeypair()
+    private val keypairBytes: ByteArray = config.keypairSeed
+        ?.let { seed -> FernlinkJni.keypairFromSeed(seed.sliceArray(0..31)) }
+        ?: FernlinkJni.generateKeypair()
 
     val publicKey: String
         get() = keypairBytes.drop(32).joinToString("") { "%02x".format(it) }
 
     private var started    = false
-    private var bleService: FernlinkBleService? = null
+    private val transports = mutableListOf<FernlinkTransport>()
 
     fun start() { started = true }
-    fun stop()  { started = false; scope.cancel() }
+    fun stop()  {
+        started = false
+        transports.forEach { it.stopMesh() }
+        scope.cancel()
+    }
 
-    fun attachBleService(service: FernlinkBleService) {
-        bleService = service
-        service.startMesh(
-            keypairSeed = keypairBytes.sliceArray(0..31),
-            rpcEndpoint = config.rpcEndpoint,
-        )
+    // ── Transport management ──────────────────────────────────────────────────
+
+    /** Attach any FernlinkTransport (BLE, WiFi Direct, etc.) to the mesh. */
+    fun attachTransport(transport: FernlinkTransport) {
+        transports.add(transport)
+        if (started) {
+            transport.startMesh(
+                keypairSeed = keypairBytes.sliceArray(0..31),
+                rpcEndpoint = config.rpcEndpoint,
+            )
+        }
+    }
+
+    /** Convenience overload — kept for backwards compatibility. */
+    fun attachBleService(service: FernlinkBleService) = attachTransport(service)
+
+    fun detachTransport(transport: FernlinkTransport) {
+        transport.stopMesh()
+        transports.remove(transport)
     }
 
     fun detachBleService() {
-        bleService?.stopMesh()
-        bleService = null
+        transports.filterIsInstance<FernlinkBleService>().forEach { detachTransport(it) }
     }
 
-    val connectedPeerCount: Int get() = bleService?.connectedPeerCount ?: 0
+    /** Total connected peers across all active transports. */
+    val connectedPeerCount: Int
+        get() = transports.sumOf { it.connectedPeerCount }
+
+    // ── NFC bootstrapping ─────────────────────────────────────────────────────
+
+    /**
+     * Create an NFC bootstrap helper that speeds up BLE pairing from ~5s to ~200ms.
+     * The helper must be driven from your Activity's onResume/onPause/onNewIntent.
+     *
+     * On receiving a tap, the helper calls GattClientManager.connectDirect() if a
+     * FernlinkBleService is attached; otherwise it calls [onBootstrapReceived].
+     */
+    fun createNfcBootstrapHelper(
+        activity: Activity,
+        onBootstrapReceived: ((peerPublicKey: String, bleAddress: String?) -> Unit)? = null,
+    ): NfcBootstrapHelper {
+        val bleMac = runCatching {
+            BluetoothAdapter.getDefaultAdapter()?.address
+        }.getOrNull()
+
+        return NfcBootstrapHelper(
+            activity            = activity,
+            localPublicKey      = publicKey,
+            localBleMacAddress  = bleMac,
+            onBootstrapReceived = { peerPubKey, bleAddress ->
+                bleAddress?.let { addr ->
+                    val bleService = transports.filterIsInstance<FernlinkBleService>().firstOrNull()
+                    bleService?.let { svc ->
+                        val device = BluetoothAdapter.getDefaultAdapter()
+                            ?.getRemoteDevice(addr)
+                        device?.let { svc.client.connectDirect(it) }
+                    }
+                }
+                onBootstrapReceived?.invoke(peerPubKey, bleAddress)
+            },
+        )
+    }
+
+    // ── Verification ─────────────────────────────────────────────────────────
 
     /**
      * Verify a Solana transaction.
      *
-     * If BLE peers are connected, broadcasts a request to the mesh. Each peer
-     * independently verifies via its own Solana RPC connection and returns a
-     * signed proof. Peers without internet forward the request further (multi-hop).
-     * Consensus requires [config.minProofs] matching proofs.
-     *
-     * Falls back to a direct local RPC call if no peer proofs arrive within
-     * [timeoutMs] or no BLE service is attached.
+     * Delegates to the highest-priority transport that has connected peers.
+     * Falls back to direct RPC if no transport has peers or none respond
+     * within [timeoutMs].
      */
     suspend fun verifyTransaction(
         txSignature: String,
@@ -82,24 +133,27 @@ class FernlinkClient(private val config: FernlinkClientConfig) {
     ): ConsensusResult = withContext(Dispatchers.IO) {
         check(started) { "Call client.start() before verifyTransaction()" }
 
-        val ble = bleService
-        if (ble != null && ble.connectedPeerCount > 0) {
-            ble.clearProofs()
-            ble.broadcastRequest(
+        // Pick highest-priority transport with active peers
+        val activeTransport = transports
+            .filter { it.connectedPeerCount > 0 }
+            .maxByOrNull { it.transportType.priority }
+
+        if (activeTransport != null) {
+            activeTransport.clearProofs()
+            activeTransport.broadcastRequest(
                 txSignature = txSignature,
                 commitment  = commitment.name.lowercase(),
                 ttl         = 8,
             )
             delay(timeoutMs)
 
-            val consensusJson = ble.collectConsensusJson(config.minProofs)
+            val consensusJson = activeTransport.collectConsensusJson(config.minProofs)
             if (consensusJson != null) {
                 return@withContext json.decodeFromString<ConsensusResult>(consensusJson)
             }
-            // Peers didn't respond in time — fall through to direct RPC
         }
 
-        // Direct RPC fallback: this device calls Solana itself
+        // Direct RPC fallback
         val sigStatus = rpc.getSignatureStatus(txSignature)
         val statusByte: Byte = when (sigStatus.status) {
             TxStatus.CONFIRMED -> 0

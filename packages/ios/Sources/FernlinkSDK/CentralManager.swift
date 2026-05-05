@@ -46,6 +46,14 @@ final class FernlinkCentralManager: NSObject {
         }
     }
 
+    /// Connect directly to a peripheral discovered via NFC bootstrap, skipping scan.
+    func connectDirect(_ peripheral: CBPeripheral) {
+        guard peripherals[peripheral.identifier] == nil else { return }
+        peripherals[peripheral.identifier] = peripheral
+        peripheral.delegate = self
+        manager.connect(peripheral, options: nil)
+    }
+
     private func drainStoreTo(_ peripheral: CBPeripheral, requestChar: CBCharacteristic) {
         let pending = proofStore.drain()
         guard !pending.isEmpty else { return }

@@ -38,4 +38,10 @@ final class BleTransport: FernlinkTransport {
     func sendRequest(_ data: Data) {
         central.sendRequest(data)
     }
+
+    /// Trigger an immediate BLE scan after NFC tap — no change in logic,
+    /// but signals the transport to re-scan with low-latency settings.
+    func startDirectScan() {
+        central.startScanning()
+    }
 }

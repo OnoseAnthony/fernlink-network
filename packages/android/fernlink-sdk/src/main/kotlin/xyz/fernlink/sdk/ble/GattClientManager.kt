@@ -67,6 +67,15 @@ internal class GattClientManager(
 
     val connectedPeerCount: Int get() = connections.size
 
+    /**
+     * Skip BLE scanning and connect directly to a known device (e.g. from NFC bootstrap).
+     * No-op if already connected to this device.
+     */
+    fun connectDirect(device: android.bluetooth.BluetoothDevice) {
+        if (connections.containsKey(device.address)) return
+        device.connectGatt(context, false, gattCallback, android.bluetooth.BluetoothDevice.TRANSPORT_LE)
+    }
+
     // ── Scan callback ─────────────────────────────────────────────────────────
 
     private val scanCallback = object : ScanCallback() {

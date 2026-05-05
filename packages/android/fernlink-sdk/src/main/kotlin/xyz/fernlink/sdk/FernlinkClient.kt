@@ -4,7 +4,10 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import org.json.JSONArray
 import org.json.JSONObject
+import android.app.Activity
+import android.bluetooth.BluetoothAdapter
 import xyz.fernlink.sdk.ble.FernlinkBleService
+import xyz.fernlink.sdk.nfc.NfcBootstrapHelper
 import xyz.fernlink.sdk.transport.FernlinkTransport
 import xyz.fernlink.sdk.transport.TransportType
 
@@ -80,6 +83,41 @@ class FernlinkClient(private val config: FernlinkClientConfig) {
     /** Total connected peers across all active transports. */
     val connectedPeerCount: Int
         get() = transports.sumOf { it.connectedPeerCount }
+
+    // ── NFC bootstrapping ─────────────────────────────────────────────────────
+
+    /**
+     * Create an NFC bootstrap helper that speeds up BLE pairing from ~5s to ~200ms.
+     * The helper must be driven from your Activity's onResume/onPause/onNewIntent.
+     *
+     * On receiving a tap, the helper calls GattClientManager.connectDirect() if a
+     * FernlinkBleService is attached; otherwise it calls [onBootstrapReceived].
+     */
+    fun createNfcBootstrapHelper(
+        activity: Activity,
+        onBootstrapReceived: ((peerPublicKey: String, bleAddress: String?) -> Unit)? = null,
+    ): NfcBootstrapHelper {
+        val bleMac = runCatching {
+            BluetoothAdapter.getDefaultAdapter()?.address
+        }.getOrNull()
+
+        return NfcBootstrapHelper(
+            activity            = activity,
+            localPublicKey      = publicKey,
+            localBleMacAddress  = bleMac,
+            onBootstrapReceived = { peerPubKey, bleAddress ->
+                bleAddress?.let { addr ->
+                    val bleService = transports.filterIsInstance<FernlinkBleService>().firstOrNull()
+                    bleService?.let { svc ->
+                        val device = BluetoothAdapter.getDefaultAdapter()
+                            ?.getRemoteDevice(addr)
+                        device?.let { svc.client.connectDirect(it) }
+                    }
+                }
+                onBootstrapReceived?.invoke(peerPubKey, bleAddress)
+            },
+        )
+    }
 
     // ── Verification ─────────────────────────────────────────────────────────
 

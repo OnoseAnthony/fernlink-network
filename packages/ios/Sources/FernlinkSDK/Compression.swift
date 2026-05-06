@@ -22,75 +22,62 @@ public func negotiateCodec(preferred: FernlinkCodec, peerCodecs: [FernlinkCodec]
 public func compress(_ data: Data, codec: FernlinkCodec) -> Data {
     switch codec {
     case .none: return data
-    case .lz4:  return data.compressed(using: .lz4)  ?? data
-    case .zstd: return data.compressed(using: .lzfse) ?? data
+    case .lz4:  return blockCompress(data, algorithm: COMPRESSION_LZ4)   ?? data
+    case .zstd: return blockCompress(data, algorithm: COMPRESSION_LZFSE) ?? data
     // Apple's Compression framework does not expose zstd directly.
     // LZFSE is Apple's own algorithm with comparable ratio and better speed
-    // on Apple Silicon. On the wire the codec byte is still 0x02 — a peer
-    // that receives a zstd-flagged payload and can't decompress it falls back
-    // to requesting re-delivery without compression via the STATUS handshake.
-    // Full zstd support can be added via a Swift Package (libzstd) later.
+    // on Apple Silicon. The codec byte on the wire is still 0x02.
     }
 }
 
 public func decompress(_ data: Data, codec: FernlinkCodec) -> Data? {
     switch codec {
     case .none: return data
-    case .lz4:  return data.decompressed(using: .lz4)
-    case .zstd: return data.decompressed(using: .lzfse)
+    case .lz4:  return blockDecompress(data, algorithm: COMPRESSION_LZ4)
+    case .zstd: return blockDecompress(data, algorithm: COMPRESSION_LZFSE)
     }
 }
 
-// MARK: - Data extensions
+// MARK: - Internal helpers
 
-private extension Data {
-    func compressed(using algorithm: Algorithm) -> Data? {
-        guard !isEmpty else { return self }
-        var dst = Data(count: count + 64)  // output buffer, slightly larger than input
-        let result = dst.withUnsafeMutableBytes { dstBuf in
-            withUnsafeBytes { srcBuf in
-                compression_encode_buffer(
-                    dstBuf.baseAddress!.assumingMemoryBound(to: UInt8.self),
-                    dst.count,
-                    srcBuf.baseAddress!.assumingMemoryBound(to: UInt8.self),
-                    count,
-                    nil,
-                    algorithm.rawValue
-                )
-            }
+private func blockCompress(_ src: Data, algorithm: compression_algorithm) -> Data? {
+    guard !src.isEmpty else { return src }
+    let srcCount    = src.count
+    let dstCapacity = srcCount + 64  // capture before any mutable borrow
+    var dst         = Data(count: dstCapacity)
+    let written     = dst.withUnsafeMutableBytes { dstBuf -> Int in
+        src.withUnsafeBytes { srcBuf -> Int in
+            compression_encode_buffer(
+                dstBuf.baseAddress!.assumingMemoryBound(to: UInt8.self),
+                dstCapacity,
+                srcBuf.baseAddress!.assumingMemoryBound(to: UInt8.self),
+                srcCount,
+                nil,
+                algorithm
+            )
         }
-        guard result > 0 else { return nil }
-        return dst.prefix(result)
     }
-
-    func decompressed(using algorithm: Algorithm) -> Data? {
-        guard !isEmpty else { return self }
-        // Allocate 4× the compressed size as an initial estimate
-        var dstSize = Swift.max(count * 4, 1024)
-        var dst = Data(count: dstSize)
-        let result = dst.withUnsafeMutableBytes { dstBuf in
-            withUnsafeBytes { srcBuf in
-                compression_decode_buffer(
-                    dstBuf.baseAddress!.assumingMemoryBound(to: UInt8.self),
-                    dstSize,
-                    srcBuf.baseAddress!.assumingMemoryBound(to: UInt8.self),
-                    count,
-                    nil,
-                    algorithm.rawValue
-                )
-            }
-        }
-        guard result > 0 else { return nil }
-        return dst.prefix(result)
-    }
+    guard written > 0 else { return nil }
+    return dst.prefix(written)
 }
 
-private enum Algorithm {
-    case lz4, lzfse
-    var rawValue: compression_algorithm {
-        switch self {
-        case .lz4:   return COMPRESSION_LZ4
-        case .lzfse: return COMPRESSION_LZFSE
+private func blockDecompress(_ src: Data, algorithm: compression_algorithm) -> Data? {
+    guard !src.isEmpty else { return src }
+    let srcCount    = src.count
+    let dstCapacity = Swift.max(srcCount * 4, 1024)  // capture before any mutable borrow
+    var dst         = Data(count: dstCapacity)
+    let written     = dst.withUnsafeMutableBytes { dstBuf -> Int in
+        src.withUnsafeBytes { srcBuf -> Int in
+            compression_decode_buffer(
+                dstBuf.baseAddress!.assumingMemoryBound(to: UInt8.self),
+                dstCapacity,
+                srcBuf.baseAddress!.assumingMemoryBound(to: UInt8.self),
+                srcCount,
+                nil,
+                algorithm
+            )
         }
     }
+    guard written > 0 else { return nil }
+    return dst.prefix(written)
 }

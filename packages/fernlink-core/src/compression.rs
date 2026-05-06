@@ -9,11 +9,11 @@ use crate::error::{FernlinkError, Result};
 pub fn compress(codec: CompressionCodec, data: &[u8]) -> Result<Vec<u8>> {
     match codec {
         CompressionCodec::None => Ok(data.to_vec()),
-        #[cfg(feature = "compression")]
+        #[cfg(feature = "lz4")]
         CompressionCodec::Lz4 => {
             Ok(lz4_flex::block::compress_prepend_size(data))
         }
-        #[cfg(feature = "compression")]
+        #[cfg(feature = "zstd")]
         CompressionCodec::Zstd => {
             zstd::encode_all(data, 3).map_err(|e| FernlinkError::Compression(e.to_string()))
         }
@@ -26,12 +26,12 @@ pub fn compress(codec: CompressionCodec, data: &[u8]) -> Result<Vec<u8>> {
 pub fn decompress(codec: CompressionCodec, data: &[u8]) -> Result<Vec<u8>> {
     match codec {
         CompressionCodec::None => Ok(data.to_vec()),
-        #[cfg(feature = "compression")]
+        #[cfg(feature = "lz4")]
         CompressionCodec::Lz4 => {
             lz4_flex::block::decompress_size_prepended(data)
                 .map_err(|e| FernlinkError::Compression(e.to_string()))
         }
-        #[cfg(feature = "compression")]
+        #[cfg(feature = "zstd")]
         CompressionCodec::Zstd => {
             zstd::decode_all(data).map_err(|e| FernlinkError::Compression(e.to_string()))
         }
@@ -64,7 +64,7 @@ confirmed\x00\x01\x00\x00\x00\x00\x00\x00\
         assert_eq!(decompressed, SAMPLE);
     }
 
-    #[cfg(feature = "compression")]
+    #[cfg(all(feature = "lz4", feature = "zstd"))]
     #[test]
     fn roundtrip_lz4() {
         let compressed   = compress(CompressionCodec::Lz4, SAMPLE).unwrap();
@@ -72,7 +72,7 @@ confirmed\x00\x01\x00\x00\x00\x00\x00\x00\
         assert_eq!(decompressed, SAMPLE);
     }
 
-    #[cfg(feature = "compression")]
+    #[cfg(all(feature = "lz4", feature = "zstd"))]
     #[test]
     fn roundtrip_zstd() {
         let compressed   = compress(CompressionCodec::Zstd, SAMPLE).unwrap();
@@ -80,7 +80,7 @@ confirmed\x00\x01\x00\x00\x00\x00\x00\x00\
         assert_eq!(decompressed, SAMPLE);
     }
 
-    #[cfg(feature = "compression")]
+    #[cfg(all(feature = "lz4", feature = "zstd"))]
     #[test]
     fn lz4_reduces_compressible_data() {
         // A highly compressible payload (repeated bytes) should shrink
@@ -89,7 +89,7 @@ confirmed\x00\x01\x00\x00\x00\x00\x00\x00\
         assert!(compressed.len() < data.len(), "LZ4 should compress repetitive data");
     }
 
-    #[cfg(feature = "compression")]
+    #[cfg(all(feature = "lz4", feature = "zstd"))]
     #[test]
     fn zstd_reduces_compressible_data() {
         let data: Vec<u8> = b"confirmed:slot:".iter().cloned().cycle().take(300).collect();

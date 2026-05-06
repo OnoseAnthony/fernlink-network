@@ -8,7 +8,7 @@ name = "fernlink_core"
 crate-type = ["cdylib"]
 
 [dependencies]
-fernlink-core = { path = "../../fernlink-core", default-features = false, features = ["compression"] }
+fernlink-core = { path = "../../fernlink-core", default-features = false, features = ["lz4"] }
 jni = { version = "0.21", default-features = false }
 serde_json = "1.0"
 anyhow = "1.0"

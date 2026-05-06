@@ -32,7 +32,7 @@ final class FernlinkPeripheralManager: NSObject {
 
     /// Push a signed proof to all subscribed centrals.
     func sendProof(_ data: Data) {
-        let frags = BleFragmentation.fragment(data)
+        let frags = BleFragmentation.fragment(encodeWirePayload(data))
         for frag in frags {
             manager.updateValue(frag, for: proofChar, onSubscribedCentrals: nil)
         }
@@ -83,7 +83,7 @@ extension FernlinkPeripheralManager: CBPeripheralManagerDelegate {
         for req in requests where req.characteristic.uuid == BleUuids.charRequest {
             guard let value = req.value else { continue }
             if let complete = reassembler.feed(value) {
-                onRequest?(complete)
+                onRequest?(decodeWirePayload(complete))
                 reassembler.reset()
             }
             if req.characteristic.properties.contains(.write) {

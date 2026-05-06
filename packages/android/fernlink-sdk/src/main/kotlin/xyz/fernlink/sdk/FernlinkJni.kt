@@ -50,4 +50,10 @@ internal object FernlinkJni {
      * @return JSON: { settled, status?, slot?, blockTime?, proofCount }
      */
     @JvmStatic external fun evaluateProofs(proofsJson: String, minProofs: Int): String?
+
+    /** Compress [data] with the given codec (0=none, 1=lz4, 2=zstd). */
+    @JvmStatic external fun compress(codec: Int, data: ByteArray): ByteArray
+
+    /** Decompress [data] with the given codec (0=none, 1=lz4, 2=zstd). */
+    @JvmStatic external fun decompress(codec: Int, data: ByteArray): ByteArray
 }

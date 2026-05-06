@@ -7,6 +7,7 @@ import android.os.ParcelUuid
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import org.json.JSONObject
+import xyz.fernlink.sdk.WirePayload
 
 /**
  * Scans for Fernlink peripherals, connects, and subscribes to PROOF notifications.
@@ -53,7 +54,7 @@ internal class GattClientManager(
     }
 
     fun sendRequest(payload: ByteArray) {
-        val fragments = BleFragmentation.fragment(payload)
+        val fragments = BleFragmentation.fragment(WirePayload.encode(payload))
         connections.values.forEach { gatt ->
             val char = gatt.getService(BleUuids.FERNLINK_SERVICE)
                 ?.getCharacteristic(BleUuids.CHAR_REQUEST) ?: return@forEach
@@ -130,7 +131,7 @@ internal class GattClientManager(
                 BleFragmentation.Reassembler()
             }
             val complete = reassembler.feed(characteristic.value) ?: return
-            _incomingProofs.tryEmit(complete)
+            _incomingProofs.tryEmit(WirePayload.decode(complete))
         }
     }
 
@@ -148,7 +149,7 @@ internal class GattClientManager(
                 put("ttl",         req.ttl)
             }.toString().toByteArray(Charsets.UTF_8)
 
-            BleFragmentation.fragment(payload).forEach { frag ->
+            BleFragmentation.fragment(WirePayload.encode(payload)).forEach { frag ->
                 char.value = frag
                 gatt.writeCharacteristic(char)
                 Thread.sleep(20)

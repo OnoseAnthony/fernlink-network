@@ -73,11 +73,11 @@ public final class MultipeerTransport: NSObject, FernlinkTransport {
     }
 
     public func sendProof(_ data: Data) {
-        sendToAll(typeTag: 0x02, payload: data)
+        sendToAll(typeTag: 0x02, payload: encodeWirePayload(data))
     }
 
     public func sendRequest(_ data: Data) {
-        sendToAll(typeTag: 0x01, payload: data)
+        sendToAll(typeTag: 0x01, payload: encodeWirePayload(data))
     }
 
     // MARK: - Private
@@ -111,8 +111,8 @@ extension MultipeerTransport: MCSessionDelegate {
                         fromPeer: MCPeerID) {
         guard let (typeTag, payload) = parseFrame(data) else { return }
         switch typeTag {
-        case 0x01: onIncomingRequest?(payload)
-        case 0x02: onIncomingProof?(payload)
+        case 0x01: onIncomingRequest?(decodeWirePayload(payload))
+        case 0x02: onIncomingProof?(decodeWirePayload(payload))
         default:   break
         }
     }

@@ -8,6 +8,7 @@ import android.content.Context
 import android.os.ParcelUuid
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
+import xyz.fernlink.sdk.WirePayload
 
 /**
  * Hosts the Fernlink GATT server and BLE advertisement.
@@ -51,7 +52,7 @@ internal class GattServerManager(private val context: Context) {
         val proofChar = server.getService(BleUuids.FERNLINK_SERVICE)
             ?.getCharacteristic(BleUuids.CHAR_PROOF) ?: return
 
-        val fragments = BleFragmentation.fragment(payload)
+        val fragments = BleFragmentation.fragment(WirePayload.encode(payload))
         subscribedDevices.toList().forEach { device ->
             fragments.forEach { frag ->
                 proofChar.value = frag
@@ -124,7 +125,7 @@ internal class GattServerManager(private val context: Context) {
                 BleFragmentation.Reassembler()
             }
             val complete = reassembler.feed(value) ?: return
-            _incomingRequests.tryEmit(complete)
+            _incomingRequests.tryEmit(WirePayload.decode(complete))
         }
 
         override fun onDescriptorWriteRequest(

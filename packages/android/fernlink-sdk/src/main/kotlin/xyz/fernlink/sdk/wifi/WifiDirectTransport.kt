@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
+import xyz.fernlink.sdk.WirePayload
 import xyz.fernlink.sdk.transport.FernlinkTransport
 import xyz.fernlink.sdk.transport.TransportType
 import java.net.ServerSocket
@@ -98,7 +99,7 @@ internal class WifiDirectTransport(
     override fun broadcastRequest(txSignature: String, commitment: String, ttl: Int) {
         val payload = """{"txSignature":"$txSignature","commitment":"$commitment","ttl":$ttl}"""
             .toByteArray(Charsets.UTF_8)
-        sendToAll(TcpFraming.TYPE_REQUEST, payload)
+        sendToAll(TcpFraming.TYPE_REQUEST, WirePayload.encode(payload))
     }
 
     override fun collectConsensusJson(minProofs: Int): String? = null
@@ -107,8 +108,8 @@ internal class WifiDirectTransport(
 
     // ── Internal send helpers ─────────────────────────────────────────────────
 
-    fun sendProof(payload: ByteArray) = sendToAll(TcpFraming.TYPE_PROOF, payload)
-    fun sendRequest(payload: ByteArray) = sendToAll(TcpFraming.TYPE_REQUEST, payload)
+    fun sendProof(payload: ByteArray) = sendToAll(TcpFraming.TYPE_PROOF, WirePayload.encode(payload))
+    fun sendRequest(payload: ByteArray) = sendToAll(TcpFraming.TYPE_REQUEST, WirePayload.encode(payload))
 
     private fun sendToAll(typeTag: Byte, payload: ByteArray) {
         val dead = mutableListOf<Socket>()
@@ -231,8 +232,8 @@ internal class WifiDirectTransport(
             while (!socket.isClosed) {
                 val (typeTag, payload) = TcpFraming.read(input) ?: break
                 when (typeTag) {
-                    TcpFraming.TYPE_REQUEST -> _incomingRequests.emit(payload)
-                    TcpFraming.TYPE_PROOF   -> _incomingProofs.emit(payload)
+                    TcpFraming.TYPE_REQUEST -> _incomingRequests.emit(WirePayload.decode(payload))
+                    TcpFraming.TYPE_PROOF   -> _incomingProofs.emit(WirePayload.decode(payload))
                 }
             }
         }

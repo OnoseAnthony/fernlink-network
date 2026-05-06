@@ -30,6 +30,22 @@ public func compress(_ data: Data, codec: FernlinkCodec) -> Data {
     }
 }
 
+/// Prepend codec byte and compress — mirrors encodeWirePayload in TypeScript web-peer.ts.
+public func encodeWirePayload(_ data: Data, codec: FernlinkCodec = .lz4) -> Data {
+    var out = Data([codec.rawValue])
+    out.append(compress(data, codec: codec))
+    return out
+}
+
+/// Strip codec byte and decompress — backwards-compatible with legacy uncompressed JSON.
+public func decodeWirePayload(_ data: Data) -> Data {
+    guard let firstByte = data.first else { return data }
+    // Legacy: starts with '{' (0x7B) or codec byte outside 0x00–0x02 — return as-is
+    guard firstByte != 0x7B, let codec = FernlinkCodec(rawValue: firstByte) else { return data }
+    let body = Data(data.dropFirst())
+    return decompress(body, codec: codec) ?? body
+}
+
 public func decompress(_ data: Data, codec: FernlinkCodec) -> Data? {
     switch codec {
     case .none: return data

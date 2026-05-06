@@ -37,7 +37,7 @@ final class FernlinkCentralManager: NSObject {
 
     /// Write a fragmented request to all connected peers.
     func sendRequest(_ data: Data) {
-        let frags = BleFragmentation.fragment(data)
+        let frags = BleFragmentation.fragment(encodeWirePayload(data))
         for (id, char) in requestChars {
             guard let peripheral = peripherals[id] else { continue }
             for frag in frags {
@@ -63,7 +63,7 @@ final class FernlinkCentralManager: NSObject {
                 commitment:  req.commitment,
                 ttl:         req.ttl
             )) else { continue }
-            BleFragmentation.fragment(data).forEach {
+            BleFragmentation.fragment(encodeWirePayload(data)).forEach {
                 peripheral.writeValue($0, for: requestChar, type: .withoutResponse)
             }
         }
@@ -131,7 +131,7 @@ extension FernlinkCentralManager: CBPeripheralDelegate {
         else { return }
 
         if let complete = reassembler.feed(value) {
-            onProof?(complete)
+            onProof?(decodeWirePayload(complete))
         }
     }
 }

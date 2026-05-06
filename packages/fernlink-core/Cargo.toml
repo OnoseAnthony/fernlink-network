@@ -8,6 +8,7 @@ repository = "https://github.com/Fernlink-Protocol/fernlink-network"
 keywords = ["solana", "blockchain", "mesh", "p2p", "verification"]
 categories = ["cryptography", "network-programming"]
 
+
 [dependencies]
 ed25519-dalek = { version = "2.1", features = ["rand_core"] }
 rand = "0.8"

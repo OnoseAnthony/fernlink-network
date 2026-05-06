@@ -118,12 +118,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "20"
           cache: "npm"
           cache-dependency-path: packages/demo/package-lock.json
-
-      - name: Upgrade npm for OIDC Trusted Publishing
-        run: npm install -g npm@latest
 
       - name: Install dependencies
         run: npm ci
@@ -166,12 +163,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "20"
           cache: "npm"
           cache-dependency-path: packages/sdk/package-lock.json
-
-      - name: Upgrade npm for OIDC Trusted Publishing
-        run: npm install -g npm@latest
 
       - name: Install dependencies
         run: npm ci

@@ -101,7 +101,7 @@ export default function About() {
         <h2 className="font-mono font-semibold text-3xl text-[#22C55E] mb-10 data-glow">
           What's Been Built
         </h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
             {
               label: "Android BLE Transport",
@@ -118,6 +118,10 @@ export default function About() {
             {
               label: "Rust Core & Desktop",
               desc: "Ed25519 proof signing and verification, stateless consensus, UUID-based gossip deduplication — all in a Rust crate published to crates.io. Desktop binary runs BLE and WiFi simultaneously.",
+            },
+            {
+              label: "Wire Compression (Protocol v2)",
+              desc: "Negotiable LZ4 and zstd compression on every transport. A 1-byte codec prefix wraps each payload; peers advertise supported codecs via the STATUS characteristic. Backwards-compatible with uncompressed v1 messages. Wired into Android BLE, Android WiFi, iOS CoreBluetooth, iOS Multipeer, and the TypeScript WebBluetoothPeer.",
             },
           ].map((item) => (
             <div key={item.label} className="bg-black border border-[#064e3b] p-6 terminal-border">

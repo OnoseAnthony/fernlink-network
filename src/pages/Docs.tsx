@@ -14,6 +14,7 @@ const platforms = [
   { name: "Rust Core",            lang: "Rust",        status: "Available", note: "BLE + WiFi/TCP dual-transport desktop binary" },
   { name: "Android",              lang: "Kotlin",      status: "Available", note: "Native GATT BLE service + NFC bootstrap + TransportManager" },
   { name: "iOS (Swift)",          lang: "Swift",       status: "Available", note: "CoreBluetooth + Multipeer Connectivity + NFC bootstrap" },
+  { name: "Web (Browser)",        lang: "TypeScript",  status: "Available", note: "WebBluetoothPeer — Chrome/Edge connect as BLE centrals to Android/iOS nodes" },
   { name: "React Native",         lang: "TypeScript",  status: "Planned",  note: "—" },
 ];
 
@@ -72,10 +73,12 @@ const optimizations = [
 ];
 
 const shippedItems = [
-  { title: "WiFi / TCP Transport",   desc: "High-throughput LAN verification using TCP with mDNS auto-discovery. Implemented in TypeScript (Node.js) and Rust desktop. Peers advertise via _fernlink._tcp.local. and connect automatically — no manual configuration required." },
-  { title: "NFC Bootstrapping",      desc: "Android and iOS support NFC tap-to-pair: an NDEF record exchange hands off the BLE address and public key, reducing peer discovery from ~5 seconds to under 200ms. The BLE connection then carries all subsequent proof traffic." },
-  { title: "Store-and-Forward",      desc: "A 64-request queue on Android and iOS holds outbound verification requests when no peers are reachable. The queue drains automatically the moment a peer connects, ensuring no request is silently dropped in intermittent connectivity scenarios." },
+  { title: "WiFi / TCP Transport",         desc: "High-throughput LAN verification using TCP with mDNS auto-discovery. Implemented in TypeScript (Node.js) and Rust desktop. Peers advertise via _fernlink._tcp.local. and connect automatically — no manual configuration required." },
+  { title: "NFC Bootstrapping",            desc: "Android and iOS support NFC tap-to-pair: an NDEF record exchange hands off the BLE address and public key, reducing peer discovery from ~5 seconds to under 200ms. The BLE connection then carries all subsequent proof traffic." },
+  { title: "Store-and-Forward",            desc: "A 64-request queue on Android and iOS holds outbound verification requests when no peers are reachable. The queue drains automatically the moment a peer connects, ensuring no request is silently dropped in intermittent connectivity scenarios." },
   { title: "Multi-Transport Orchestration", desc: "TransportManager on Android, iOS, and TypeScript coordinates BLE and WiFi simultaneously. Verification automatically uses the highest-priority transport with active peers, falling back to direct RPC if none are available." },
+  { title: "Negotiable Wire Compression (Protocol v2)", desc: "LZ4 and zstd codecs are now negotiated per-connection via the STATUS characteristic. Every outgoing payload is compressed with a 1-byte codec prefix; incoming payloads are decoded transparently. Backwards-compatible: messages starting with '{' are treated as legacy uncompressed JSON. Wired into all five transport layers — Android BLE GATT, Android WiFi/TCP, iOS CoreBluetooth, iOS Multipeer Connectivity, and the TypeScript WebBluetoothPeer." },
+  { title: "CI/CD Auto-publish Pipelines", desc: "GitHub Actions workflows cover every platform: Rust cargo test, TypeScript SDK tests + BLE simulator, Android assembleRelease, and iOS swift build. The SDK workflow gates the npm publish job behind all four checks — type-check, unit tests, WiFi transport check, and BLE simulator tests — before bumping the patch version and publishing to npm automatically on every push to main." },
 ];
 
 const futureItems = [
@@ -88,7 +91,6 @@ const futureItems = [
   { title: "Hardware Modules",           desc: "Dedicated Fernlink hardware for merchants and infrastructure operators, providing always-on verification nodes." },
   { title: "Decentralized Governance",   desc: "Community-driven protocol upgrades via on-chain voting and proposal mechanisms." },
   { title: "Cross-Chain Support",        desc: "Extend the proof and gossip layer to additional blockchain networks. The BLE mesh and Ed25519 infrastructure are not Solana-specific — only the RPC call and signature scheme change per chain." },
-  { title: "LZ4 Wire Compression",       desc: "Compress proof payloads before transmission to reduce bytes over the BLE link. Particularly useful for high-frequency DeFi operations and constrained IoT devices." },
 ];
 
 function Block({ children }: { children: React.ReactNode }) {
@@ -222,6 +224,41 @@ export default function Docs() {
   "timestampMs":      1700000000000
 }`}
             </pre>
+          </Block>
+
+          <Block>
+            <SectionLabel>Wire Encoding (Protocol v2)</SectionLabel>
+            <p className="font-mono text-sm text-[#166534] mb-4 leading-relaxed">
+              Every payload is prefixed with a single codec byte before transmission. The receiver
+              strips the prefix, decompresses, and parses JSON. Legacy v1 messages (starting with
+              <span className="text-[#22C55E]"> {'{'} </span>
+              / 0x7B) are detected automatically and passed through without decompression.
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full font-mono text-sm">
+                <thead>
+                  <tr className="border-b border-[#064e3b]">
+                    {["Byte", "Codec", "Library", "Notes"].map((h) => (
+                      <th key={h} className="text-left py-3 px-4 text-[#22C55E] uppercase text-xs tracking-widest">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { byte: "0x00", codec: "none",  lib: "—",                        note: "Raw JSON, no compression" },
+                    { byte: "0x01", codec: "lz4",   lib: "lz4_flex / lz4js",         note: "Block format with 4-byte LE size prefix — default codec" },
+                    { byte: "0x02", codec: "zstd",  lib: "zstd / COMPRESSION_LZFSE", note: "Higher ratio; iOS uses LZFSE (same wire byte)" },
+                  ].map((r) => (
+                    <tr key={r.byte} className="border-b border-[#064e3b]">
+                      <td className="py-3 px-4 text-[#22C55E]">{r.byte}</td>
+                      <td className="py-3 px-4 text-[#166534]">{r.codec}</td>
+                      <td className="py-3 px-4 text-[#166534] text-xs">{r.lib}</td>
+                      <td className="py-3 px-4 text-[#166534] text-xs">{r.note}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </Block>
         </div>
       )}

@@ -3,13 +3,13 @@ import { Link } from "react-router-dom";
 import { GITHUB } from "@/lib/constants";
 
 const sdks = [
-  { platform: "TypeScript / Node.js", pkg: "fernlink-sdk",     install: "npm install fernlink-sdk",  repo: `${GITHUB}/tree/main/packages/sdk`,            status: "Available" },
-  { platform: "Rust Core",            pkg: "fernlink-core",    install: "cargo add fernlink-core",   repo: `${GITHUB}/tree/main/packages/fernlink-core`,  status: "Available" },
-  { platform: "Android (Kotlin)",     pkg: "fernlink-android", install: null,                        repo: `${GITHUB}/tree/main/packages/android`,        status: "Available" },
-  { platform: "iOS (Swift)",          pkg: "fernlink-ios",     install: null,                        repo: `${GITHUB}/tree/main/packages/ios`,            status: "Available" },
-  { platform: "Web (Browser)",        pkg: "fernlink-sdk",     install: "npm install fernlink-sdk",  repo: `${GITHUB}/tree/main/packages/sdk`,            status: "Available" },
-  { platform: "Desktop (Rust)",       pkg: "fernlink-node",    install: "cargo install fernlink-ble-desktop", repo: `${GITHUB}/tree/main/packages/ble-desktop`, status: "Available" },
-  { platform: "React Native",         pkg: "fernlink-rn",      install: null,                        repo: null,                                           status: "Planned" },
+  { platform: "TypeScript / Node.js", version: "v0.2.0", pkg: "fernlink-sdk",     install: "npm install fernlink-sdk",           repo: `${GITHUB}/tree/main/packages/sdk`,            status: "Available" },
+  { platform: "Rust Core",            version: "v0.1.0", pkg: "fernlink-core",    install: "cargo add fernlink-core",             repo: `${GITHUB}/tree/main/packages/fernlink-core`,  status: "Available" },
+  { platform: "Android (Kotlin)",     version: null,     pkg: "fernlink-android", install: null,                                  repo: `${GITHUB}/tree/main/packages/android`,        status: "Available" },
+  { platform: "iOS (Swift)",          version: null,     pkg: "fernlink-ios",     install: null,                                  repo: `${GITHUB}/tree/main/packages/ios`,            status: "Available" },
+  { platform: "Web (Browser)",        version: "v0.2.0", pkg: "fernlink-sdk",     install: "npm install fernlink-sdk",           repo: `${GITHUB}/tree/main/packages/sdk`,            status: "Available" },
+  { platform: "Desktop (Rust)",       version: null,     pkg: "fernlink-node",    install: "cargo install fernlink-ble-desktop",  repo: `${GITHUB}/tree/main/packages/ble-desktop`,   status: "Available" },
+  { platform: "React Native",         version: null,     pkg: "fernlink-rn",      install: null,                                  repo: null,                                          status: "Planned" },
 ];
 
 
@@ -125,7 +125,8 @@ console.log(result.status, result.slot, result.proofCount);
             <h2 className="font-mono font-semibold text-xl text-[#22C55E] mb-3">Source Code</h2>
             <p className="font-mono text-sm text-[#166534] mb-6 leading-relaxed">
               Full monorepo: Rust core, TypeScript SDK, Android and iOS SDKs, BLE and WiFi/TCP
-              transports, NFC bootstrapping, and a live devnet demo. Apache 2.0 licensed and open for contributions.
+              transports, NFC bootstrapping, LZ4/zstd wire compression, and a live devnet demo.
+              Apache 2.0 licensed and open for contributions.
             </p>
             <a
               href={GITHUB}
@@ -144,6 +145,16 @@ console.log(result.status, result.slot, result.proofCount);
         <div className="font-mono text-[#22C55E] text-sm uppercase tracking-widest mb-6">
           // SDK_PACKAGES
         </div>
+        <div className="bg-black border border-[#22C55E]/30 p-5 mb-6 flex gap-4 items-start bg-[#22C55E]/5">
+          <div className="shrink-0 font-mono text-[10px] uppercase tracking-widest text-black bg-[#22C55E] px-2 py-1 mt-0.5">NEW</div>
+          <p className="font-mono text-sm text-[#166534] leading-relaxed">
+            <span className="text-[#22C55E]">WebBluetoothPeer</span> is now included in{" "}
+            <span className="text-[#22C55E]">fernlink-sdk</span>. Chrome and Edge browsers
+            can connect directly to Android or iOS Fernlink nodes over BLE — no native app required.
+            Import <span className="text-[#22C55E]">{"{ WebBluetoothPeer }"} from "fernlink-sdk"</span> and
+            call <span className="text-[#22C55E]">WebBluetoothPeer.connect()</span> from a button click.
+          </p>
+        </div>
         <div className="bg-black border border-[#064e3b] terminal-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full font-mono text-sm">
@@ -157,7 +168,12 @@ console.log(result.status, result.slot, result.proofCount);
               <tbody>
                 {sdks.map((sdk) => (
                   <tr key={sdk.pkg} className="border-b border-[#064e3b] hover:bg-[#22C55E]/5 transition-colors">
-                    <td className="py-4 px-5 text-[#22C55E]">{sdk.platform}</td>
+                    <td className="py-4 px-5 text-[#22C55E]">
+                      {sdk.platform}
+                      {sdk.version && (
+                        <span className="ml-2 text-[10px] font-mono text-[#166534] border border-[#064e3b] px-1.5 py-0.5">{sdk.version}</span>
+                      )}
+                    </td>
                     <td className="py-4 px-5 text-[#166534]">
                       {sdk.install ? (
                         <div className="flex items-center">

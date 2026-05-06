@@ -46,6 +46,7 @@ pub struct Header {
     pub message_id:   Uuid,
     pub timestamp_ms: u64,
     pub ttl:          u8,
+    #[serde(default)]
     pub compression:  CompressionCodec,
 }
 

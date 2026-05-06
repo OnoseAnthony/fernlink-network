@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
-import type { VerificationRequest, VerificationProof, PeerInfo, FernlinkPeer } from "./types.js";
+import { compress, decompress, SUPPORTED_CODECS } from "./compression.js";
+import type { CompressionCodec, VerificationRequest, VerificationProof, PeerInfo, FernlinkPeer } from "./types.js";
 
 // fe4e = valid hex encoding of "FeN" (Fernlink). Must match all other platform layers.
 const SERVICE_UUID = "fe4e0000-0000-1000-8000-00805f9b34fb";
@@ -20,6 +21,7 @@ const MAX_PAYLOAD  = 510; // 512 byte MTU − 2 byte fragment header
  */
 export class WebBluetoothPeer implements FernlinkPeer {
   readonly info: PeerInfo;
+  readonly supportedCodecs: CompressionCodec[] = SUPPORTED_CODECS;
   private handlers: Array<(proof: VerificationProof) => void> = [];
   private requestChar: BluetoothRemoteGATTCharacteristic;
   private reassembler = new Reassembler();
@@ -64,7 +66,8 @@ export class WebBluetoothPeer implements FernlinkPeer {
       const complete = peer.reassembler.feed(data);
       if (!complete) return;
       try {
-        const proof = JSON.parse(new TextDecoder().decode(complete)) as VerificationProof;
+        const decoded = decodeWirePayload(complete);
+        const proof = JSON.parse(new TextDecoder().decode(decoded)) as VerificationProof;
         for (const h of peer.handlers) h(proof);
       } catch { /* malformed proof — ignore */ }
     });
@@ -80,9 +83,10 @@ export class WebBluetoothPeer implements FernlinkPeer {
     this.handlers.push(handler);
   }
 
-  /** Serialize and fragment the request, writing each fragment to the peer. */
+  /** Serialize, compress (if negotiated), fragment, and write to the peer. */
   async handleRequest(req: VerificationRequest): Promise<void> {
-    const payload = new TextEncoder().encode(JSON.stringify(req));
+    const json    = new TextEncoder().encode(JSON.stringify(req));
+    const payload = encodeWirePayload(req.compression ?? "none", json);
     for (const frag of fragment(payload)) {
       await this.requestChar.writeValueWithoutResponse(frag);
     }
@@ -91,6 +95,33 @@ export class WebBluetoothPeer implements FernlinkPeer {
   disconnect(): void {
     this.requestChar.service.device.gatt?.disconnect();
   }
+}
+
+// ── Wire payload encoding (codec-byte prefix + compressed JSON) ───────────────
+//
+// Format: [1 byte: CompressionCodec (0x00–0x02)] [compressed or raw JSON bytes]
+//
+// Backwards compatibility: legacy messages start with '{' (0x7B), which is
+// outside the codec range 0x00–0x02. Those are treated as uncompressed JSON.
+
+const CODEC_BYTES: Record<CompressionCodec, number> = { none: 0x00, lz4: 0x01, zstd: 0x02 };
+const BYTE_CODECS: Record<number, CompressionCodec>  = { 0x00: "none", 0x01: "lz4", 0x02: "zstd" };
+
+function encodeWirePayload(codec: CompressionCodec, json: Uint8Array): Uint8Array {
+  const body = compress(codec, json);
+  const out  = new Uint8Array(1 + body.length);
+  out[0] = CODEC_BYTES[codec];
+  out.set(body, 1);
+  return out;
+}
+
+function decodeWirePayload(data: Uint8Array): Uint8Array {
+  const firstByte = data[0];
+  if (firstByte === undefined) return data;
+  // Legacy message: starts with '{' (0x7B) — uncompressed, no codec prefix
+  if (firstByte === 0x7B || !(firstByte in BYTE_CODECS)) return data;
+  const codec = BYTE_CODECS[firstByte]!;
+  return decompress(codec, data.slice(1));
 }
 
 // ── Fragmentation (same 2-byte header protocol as Android + Rust layers) ──────

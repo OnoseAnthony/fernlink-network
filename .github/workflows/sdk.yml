@@ -118,10 +118,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          registry-url: "https://registry.npmjs.org"
+          node-version: "22"
           cache: "npm"
           cache-dependency-path: packages/demo/package-lock.json
+
+      - name: Upgrade npm for OIDC Trusted Publishing
+        run: npm install -g npm@latest
 
       - name: Install dependencies
         run: npm ci
@@ -138,11 +140,8 @@ jobs:
       - name: Push version commit
         run: git push
 
-      - name: Clear empty auth token so npm uses OIDC exchange
-        run: sed -i '/^\/\/registry.npmjs.org\/:_authToken/d' ~/.npmrc
-
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: npm publish --access public
 
   publish-sdk:
     name: Bump version and publish fernlink-sdk
@@ -167,10 +166,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          registry-url: "https://registry.npmjs.org"
+          node-version: "22"
           cache: "npm"
           cache-dependency-path: packages/sdk/package-lock.json
+
+      - name: Upgrade npm for OIDC Trusted Publishing
+        run: npm install -g npm@latest
 
       - name: Install dependencies
         run: npm ci
@@ -187,11 +188,8 @@ jobs:
       - name: Push version commit
         run: git push
 
-      - name: Clear empty auth token so npm uses OIDC exchange
-        run: sed -i '/^\/\/registry.npmjs.org\/:_authToken/d' ~/.npmrc
-
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: npm publish --access public
 
   test-ble-simulator:
     name: BLE simulator tests + type-check

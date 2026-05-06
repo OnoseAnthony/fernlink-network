@@ -53,6 +53,13 @@ const phases = [
   },
   {
     id: "PHASE_08",
+    title: "Wire Compression (Protocol v2)",
+    status: "COMPLETE",
+    desc: "Negotiable LZ4 and zstd compression on every transport layer. A 1-byte codec prefix wraps each payload; peers advertise supported codecs via the STATUS characteristic. Backwards-compatible with uncompressed Protocol v1 messages.",
+    items: ["LZ4 + zstd codec negotiation (0x01/0x02 prefix)", "Android BLE + WiFi/TCP transports", "iOS CoreBluetooth + Multipeer Connectivity", "TypeScript WebBluetoothPeer", "Rust core compression feature flags"],
+  },
+  {
+    id: "PHASE_09",
     title: "Protocol Extensions",
     status: "PLANNED",
     desc: "The verification mesh is the foundation. The next layer extends it from read-only proof queries to full bidirectional protocol capabilities, peer reputation, and cross-chain support.",
@@ -76,10 +83,6 @@ const upcoming = [
   {
     title: "Peer Reputation",
     desc: "Verifiers who consistently return accurate proofs accumulate on-chain reputation. Nodes that return bad proofs lose standing, shifting trust from consensus-only to track-record-backed.",
-  },
-  {
-    title: "LZ4 Wire Compression",
-    desc: "Compress proof payloads before transmission to reduce bytes over BLE links, particularly for high-frequency DeFi operations and constrained IoT devices.",
   },
   {
     title: "Cross-Chain Support",

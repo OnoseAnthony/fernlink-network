@@ -119,6 +119,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+          registry-url: "https://registry.npmjs.org"
           cache: "npm"
           cache-dependency-path: packages/demo/package-lock.json
 
@@ -164,6 +165,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+          registry-url: "https://registry.npmjs.org"
           cache: "npm"
           cache-dependency-path: packages/sdk/package-lock.json
 

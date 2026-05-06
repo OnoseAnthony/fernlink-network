@@ -138,8 +138,11 @@ jobs:
       - name: Push version commit
         run: git push
 
+      - name: Clear empty auth token so npm uses OIDC exchange
+        run: sed -i '/^\/\/registry.npmjs.org\/:_authToken/d' ~/.npmrc
+
       - name: Publish to npm
-        run: npm publish --provenance --access public --loglevel verbose
+        run: npm publish --provenance --access public
 
   publish-sdk:
     name: Bump version and publish fernlink-sdk
@@ -183,6 +186,9 @@ jobs:
 
       - name: Push version commit
         run: git push
+
+      - name: Clear empty auth token so npm uses OIDC exchange
+        run: sed -i '/^\/\/registry.npmjs.org\/:_authToken/d' ~/.npmrc
 
       - name: Publish to npm
         run: npm publish --provenance --access public

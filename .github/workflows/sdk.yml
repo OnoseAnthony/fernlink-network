@@ -102,6 +102,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: write
+      id-token: write   # required for npm Trusted Publishing (OIDC)
     defaults:
       run:
         working-directory: packages/demo
@@ -134,9 +135,7 @@ jobs:
         run: git push
 
       - name: Publish to npm
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
 
   publish-sdk:
     name: Bump version and publish fernlink-sdk
@@ -145,6 +144,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: write
+      id-token: write   # required for npm Trusted Publishing (OIDC)
     defaults:
       run:
         working-directory: packages/sdk
@@ -177,9 +177,7 @@ jobs:
         run: git push
 
       - name: Publish to npm
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
 
   test-ble-simulator:
     name: BLE simulator tests + type-check

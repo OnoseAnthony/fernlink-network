@@ -18,12 +18,12 @@ const posts = [
     status:  "published",
   },
   {
-    slug:    null,
-    date:    "2026-06-01",
+    slug:    "/blog/rpc-reduction",
+    date:    "2026-05-22",
     title:   "How BLE Mesh Networks Can Reduce RPC Costs by 80%",
     excerpt: "A rigorous look at the math behind the 60–80% RPC reduction claim: density models, proof propagation curves, and the conditions under which the mesh provides the most value. Includes benchmarks from the devnet demo across simulated peer counts.",
     tags:    ["PERFORMANCE", "PROTOCOL"],
-    status:  "upcoming",
+    status:  "published",
   },
   {
     slug:    null,

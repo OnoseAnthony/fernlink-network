@@ -14,6 +14,7 @@ import Roadmap from "./pages/Roadmap";
 import Blog from "./pages/Blog";
 import IntroducingFernlink from "./pages/blog/IntroducingFernlink";
 import MultiTransport from "./pages/blog/MultiTransport";
+import RpcReduction from "./pages/blog/RpcReduction";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/introducing-fernlink" element={<IntroducingFernlink />} />
             <Route path="/blog/multi-transport" element={<MultiTransport />} />
+            <Route path="/blog/rpc-reduction" element={<RpcReduction />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>

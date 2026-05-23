@@ -150,7 +150,7 @@ export default function RpcReduction() {
           Includes benchmarks from the devnet demo across simulated peer counts.
         </p>
         <div className="flex flex-wrap items-center gap-4 font-mono text-[10px] uppercase tracking-widest text-[#166534]">
-          <span>2026-06-01</span>
+          <span>2026-05-22</span>
           <span className="border border-[#064e3b] px-2 py-0.5 text-[#22C55E]">PERFORMANCE</span>
           <span className="border border-[#064e3b] px-2 py-0.5">PROTOCOL</span>
         </div>

@@ -183,7 +183,7 @@ export default function IntroducingFernlink() {
         </P>
         <ul className="mb-6 space-y-1">
           <Bullet>
-            <strong className="text-[#22C55E]">Transaction broadcasting</strong> through the mesh, so devices with no internet can sign locally and relay through a connected peer for submission — making the protocol fully bidirectional.
+            <strong className="text-[#22C55E]">Transaction broadcasting</strong> through the mesh, so devices with no internet can sign locally and relay through a connected peer for submission. This makes the protocol fully bidirectional.
           </Bullet>
           <Bullet>
             <strong className="text-[#22C55E]">Account and program state queries</strong> so devices can request balances, token holdings, and program state from peers, with responses signed and returned through the gossip layer.

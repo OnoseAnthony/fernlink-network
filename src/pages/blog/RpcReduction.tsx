@@ -172,7 +172,7 @@ export default function RpcReduction() {
           for static resources are locality-amenable: the same bytes requested by many clients can be
           served from a nearby cache rather than re-fetched from origin on every request. The economic
           argument for edge caching is compelling enough that it now underpins a multi-billion dollar
-          industry. The same economic argument applies to transaction verification — but the cache
+          industry. The same economic argument applies to transaction verification, but the cache
           cannot live on a server. The users <Hi>are</Hi> the cache.
         </P>
         <P>
@@ -198,7 +198,7 @@ export default function RpcReduction() {
         <P>
           Consider a concrete case. A token launch attracts 10,000 concurrent wallets, each polling
           for transaction confirmation every 1.5 seconds over a 20-second confirmation window. That
-          is roughly 133,000 RPC requests for a single batch of transactions — before counting any
+          is roughly 133,000 RPC requests for a single batch of transactions, not counting any
           enrichment calls. At a realistic paid-tier cost of $0.0001 per request on a high-volume
           provider, that single event costs $13.30. Unexceptional on its own; catastrophic at the
           scale of a protocol that processes hundreds of thousands of transactions per day.
@@ -220,8 +220,8 @@ Example:
         </MathBlock>
         <P>
           The harder problem is mobile reconnect churn. A phone entering an elevator loses cellular
-          connectivity for 30 seconds. When it resurfaces, the wallet client has no local state —
-          it cannot know which transactions may have landed during the gap — so it triggers a cold-start
+          connectivity for 30 seconds. When it resurfaces, the wallet client has no local state, so
+          it cannot know which transactions may have landed during the gap. It triggers a cold-start
           synchronization: recent transaction history, account balances, program state. This pattern
           is not a pathological edge case. It is the normal behavior of mobile clients in urban
           environments. Every subway ride, every elevator, every building with marginal signal is a
@@ -230,13 +230,13 @@ Example:
           fully absorbs.
         </P>
         <P>
-          Fan-out amplification makes this worse. A single high-volume event — an NFT drop, a protocol
-          upgrade, a token listing — generates correlated demand spikes. The same 200 transactions are
-          being queried simultaneously by thousands of devices with overlapping polling schedules.
-          Unlike independent Poisson arrivals, correlated spikes saturate RPC endpoints precisely when
-          they are most heavily loaded. The RPC providers that serve the ecosystem are not immune to
-          this: rate limits tighten, latencies increase, and the degradation propagates back to every
-          application relying on them.
+          Fan-out amplification makes this worse. A single high-volume event like an NFT drop, a
+          protocol upgrade, or a token listing generates correlated demand spikes. The same 200
+          transactions are being queried simultaneously by thousands of devices with overlapping
+          polling schedules. Unlike independent Poisson arrivals, correlated spikes saturate RPC
+          endpoints precisely when they are most heavily loaded. The RPC providers that serve the
+          ecosystem are not immune to this: rate limits tighten, latencies increase, and the
+          degradation propagates back to every application relying on them.
         </P>
 
         {/* ── 3. BLE as Distributed Cache ────────────────────────────────── */}
@@ -246,7 +246,7 @@ Example:
           The JSON wire format encodes the transaction signature, confirmation status, slot, block time,
           the verifier's Ed25519 public key, and a 64-byte signature over those fields. The whole thing
           is approximately <Hi>500 bytes</Hi>. It is small enough to transfer across a BLE GATT
-          connection in three ATT INDICATE fragments — each fragment carrying 182 bytes of payload
+          connection in three ATT INDICATE fragments, each carrying 182 bytes of payload
           (our conservative MTU of 185 bytes minus 3 bytes of ATT overhead). At an INDICATE round-trip
           latency of roughly 18 ms per fragment on a stable connection, the full proof
           transfers in <Hi>~54 ms</Hi>.
@@ -254,7 +254,7 @@ Example:
         <P>
           That number matters. A direct Solana RPC call on a decent mobile connection takes 100–300 ms
           including TLS handshake and connection setup. A mesh proof delivery from an already-connected
-          peer is in the same latency range — often faster — and requires <Hi>zero internet connectivity</Hi>
+          peer is in the same latency range, often faster, and requires <Hi>zero internet connectivity</Hi>
           from the receiving device. The economics flip once a peer within BLE range has already done
           the verification work.
         </P>
@@ -270,7 +270,7 @@ Example:
           Deduplication is handled in the <Mono>SeenCache</Mono> in <Mono>fernlink-core</Mono>. Every
           message carries a UUID in its wire header; the cache tracks seen UUIDs with a 300-second TTL
           and a capacity ceiling of 32,000 entries. When a relaying node receives a proof it has already
-          forwarded, it drops it immediately — no re-broadcast, no signature verification, no RPC call.
+          forwarded, it drops it immediately. No re-broadcast, no signature verification, no RPC call.
           A second copy of the same proof arriving on a different transport path is discarded at the
           UUID level before it touches the consensus layer. This is the mechanism that prevents gossip
           storms in a dense mesh.
@@ -278,8 +278,8 @@ Example:
         <P>
           The propagation TTL is set to <Hi>8 hops</Hi> (<Mono>DEFAULT_TTL = 8</Mono> in the wire
           header). This is not arbitrary. At 15 meters of indoor BLE range and a hop-by-hop relay
-          model, 8 hops covers a geographic radius of approximately 120 meters from the origin —
-          enough to span a large conference hall, an open-plan office floor, or a dense outdoor
+          model, 8 hops covers a geographic radius of approximately 120 meters from the origin.
+          That is enough to span a large conference hall, an open-plan office floor, or a dense outdoor
           market. Beyond that radius, proofs either arrive from a different origin verifier or the
           device falls back to direct RPC. The TTL is the protocol's explicit acknowledgment that
           the mesh is a locality-bounded optimization, not a global broadcast network.
@@ -291,7 +291,7 @@ Example:
 on_proof_received(payload):
   json = parse(payload)
   if not verify_ed25519(json):              // cryptographic check first
-      return                                // malformed or adversarial — drop
+      return                                // malformed or adversarial: drop
   if not proof_matches_current_round(json): // stale proof from prior round
       return
   pubkey_hex = extract_verifier_pubkey(json)
@@ -327,15 +327,15 @@ on_request_received(payload):
         <P>
           Model the BLE mesh as a <Hi>random geometric graph</Hi>: N nodes distributed uniformly
           across a venue of area A, with edges between nodes within BLE range r. Each edge has a
-          maximum degree of <Mono>MAX_PEERS = 4</Mono> — the hard cap in our GATT client
+          maximum degree of <Mono>MAX_PEERS = 4</Mono>, the hard cap in our GATT client
           implementation. The graph is sparse by construction.
         </P>
         <MathBlock>{`Variables:
-  N       — number of active Fernlink nodes in the venue
-  A       — venue area (m²)
-  ρ = N/A — node density (devices/m²)
-  r       — effective indoor BLE range (~15 m)
-  k       — mean node degree = min(MAX_PEERS, ρπr²)
+  N          number of active Fernlink nodes in the venue
+  A          venue area (m²)
+  ρ = N/A    node density (devices/m²)
+  r          effective indoor BLE range (~15 m)
+  k          mean node degree = min(MAX_PEERS, ρπr²)
 
 Physical neighbor count (before the MAX_PEERS cap):
   k_phys = ρ × π × r² = (N/A) × π × r²
@@ -355,7 +355,7 @@ in disconnected components.`}
         <P>
           The critical density threshold is more forgiving than it appears. A density of 1 device
           per 175 m² means a modest 20-person gathering in a 3,500 m² space is already above threshold.
-          In practice, people cluster — the effective density at a conference registration desk or
+          In practice, people cluster. The effective density at a conference registration desk or
           a coffee queue is an order of magnitude higher than the average. The mesh is robust to
           uneven distribution because high-density clusters create well-connected sub-graphs, and
           even sparse bridges between them allow propagation to continue.
@@ -391,10 +391,10 @@ T_prop for N = 50:  6 × 54 ms = 324 ms`}
         </MathBlock>
         <P>
           The TTL=8 limit is the critical design constraint. It is not set to minimize memory or
-          bandwidth — it is set to bound geographic spread. For networks where H exceeds 8, nodes
+          bandwidth. It is set to bound geographic spread. For networks where H exceeds 8, nodes
           at the periphery (more than 8 hops from the initial verifier) are unreachable within
-          a single propagation event. They either rely on a closer verifier — common in any venue
-          with multiple Fernlink-enabled devices that independently query the RPC — or fall back
+          a single propagation event. They either rely on a closer verifier (common in any venue
+          with multiple Fernlink-enabled devices that independently query the RPC) or fall back
           to direct RPC. This is not a failure mode. It is the protocol being honest about the
           limits of local propagation.
         </P>
@@ -416,7 +416,7 @@ h = 3:  N ≤ 41
 h = 5:  N ≤ 365
 h = 8:  N ≤ 13,123
 
-But this is a tree bound — real geometric graphs have many back-edges.
+But this is a tree bound. Real geometric graphs have many back-edges.
 Empirical coverage for a random geometric graph with k = 4:
 
   h = 6:  ~78% of nodes within the 6-hop subgraph
@@ -452,9 +452,9 @@ Example: N = 250, T_prop = 432 ms, T = 20 s, f_∞ = 0.91
     ≈ 0.89 (theoretical maximum)
 
 Derating for real-world effects:
-  — p_a = 0.80 (participation rate among Fernlink nodes)
-  — connection quality factor q = 0.92 (dropped fragments, reconnects)
-  — geographic coverage factor g = 0.95 (venue not perfectly convex)
+  p_a = 0.80   participation rate among Fernlink nodes
+  q   = 0.92   connection quality factor (dropped fragments, reconnects)
+  g   = 0.95   geographic coverage factor (venue not perfectly convex)
 
   S_realistic ≈ 0.89 × p_a × q × g
               ≈ 0.89 × 0.80 × 0.92 × 0.95
@@ -480,19 +480,19 @@ This is where the "60–80%" range comes from.`}
           ones yield almost nothing.
         </P>
         <P>
-          In a <Hi>sparse topology</Hi> — below the critical density threshold of ~0.006 devices/m² —
-          the connection graph is fragmented. Proofs propagate freely within connected components
-          but cannot cross gaps between them. A device in an isolated component has no mesh peers
-          and must always call the RPC. The suppression rate in sparse deployments is bounded by
-          the size of the largest connected component divided by N, which in a subcritical random
-          geometric graph can be as low as O(log N / N). In practice: close to zero.
+          A <Hi>sparse topology</Hi> sits below the critical density threshold of ~0.006 devices/m².
+          In that regime, the connection graph is fragmented. Proofs propagate freely within
+          connected components but cannot cross gaps between them. A device in an isolated component
+          has no mesh peers and must always call the RPC. The suppression rate in sparse deployments
+          is bounded by the size of the largest connected component divided by N, which in a
+          subcritical random geometric graph can be as low as O(log N / N). In practice: close to zero.
         </P>
         <P>
           As density increases toward and past the percolation threshold, something discontinuous
-          happens. A <Hi>giant connected component</Hi> emerges — a single cluster that contains
-          a large fraction of all nodes. The transition is sharp. Below threshold: many small
-          isolated clusters. Above threshold: one dominant cluster. This is a phase transition in
-          the graph-theoretic sense, and it is why density improvements above a certain point have
+          happens. A <Hi>giant connected component</Hi> emerges: a single cluster that contains
+          a large fraction of all nodes. The transition is sharp. Below threshold you see many small
+          isolated clusters. Above threshold there is one dominant cluster. This is a phase transition
+          in the graph-theoretic sense, and it is why density improvements above a certain point have
           compounding returns while those below it have almost none.
         </P>
         <P>
@@ -500,7 +500,7 @@ This is where the "60–80%" range comes from.`}
           dominates but the graph is not yet saturated at MAX_PEERS=4. The diameter decreases
           with density as more paths become available. Propagation time drops. Coverage fraction
           within TTL=8 increases. Suppression rates move into the 50–70% range. The curve is
-          steep here — small density improvements translate to meaningful suppression gains.
+          steep here. Small density improvements translate to meaningful suppression gains.
         </P>
         <P>
           The <Hi>high-density regime</Hi> (more than ~10 devices per 100 m²) saturates the
@@ -557,17 +557,17 @@ This is where the "60–80%" range comes from.`}
         <P>
           The practical implication: a Fernlink deployment at scale needs distributed verifiers,
           not just a single initial one. If 10% of nodes run with RPC access and will independently
-          verify any transaction they see a request for, the effective TTL ceiling multiplies:
-          each independent verifier initiates its own propagation wave. Two waves with overlapping
+          verify any transaction they see a request for, the effective TTL ceiling multiplies.
+          Each independent verifier initiates its own propagation wave. Two waves with overlapping
           coverage zones produce a combined coverage that significantly exceeds what either achieves
-          alone. The protocol supports this naturally — the consensus layer deduplicates by verifier
+          alone. The protocol supports this naturally. The consensus layer deduplicates by verifier
           public key, so proofs from multiple independent verifiers all count toward the threshold.
         </P>
 
         <H3>// Why the 10,000-peer scenario doesn't collapse</H3>
         <P>
-          A 62% suppression rate at N=10,000 is lower than the 76% at N=250, but it is not zero —
-          and that requires explanation. With a single verifier and TTL=8 in a large venue, you
+          A 62% suppression rate at N=10,000 is lower than the 76% at N=250, but it is not zero.
+          That requires explanation. With a single verifier and TTL=8 in a large venue, you
           would expect propagation to cover only a small fraction of the total population. The 62%
           figure assumes a realistic distribution of multiple independent verifiers throughout the
           venue. At N=10,000 with even a 5% verifier rate, there are 500 independent verification
@@ -633,7 +633,7 @@ and a node's 8-hop neighborhood contains ~N_8 nodes:
         </P>
         <P>
           Urban density also qualifies. A city block of 500 people where 20% run a Fernlink-enabled
-          wallet is above threshold. Transit hubs — subway platforms, bus stations — have
+          wallet is above threshold. Transit hubs like subway platforms and bus stations have
           transient but extremely high densities. The fact that connections are short-lived in
           transit environments is partially compensated for by the density: with hundreds of devices
           within BLE range, connection establishment time is low and proof propagation happens quickly.
@@ -643,8 +643,8 @@ and a node's 8-hop neighborhood contains ~N_8 nodes:
         <P>
           Rural deployments with isolated users are the canonical failure case. If you are the only
           Fernlink node within 15 meters in every direction, the mesh provides nothing. You make
-          the RPC call. The protocol falls back gracefully — the direct RPC path is always available —
-          but there is no RPC reduction, and there never will be until density increases.
+          the RPC call. The protocol falls back gracefully: the direct RPC path is always available.
+          But there is no RPC reduction, and there never will be until density increases.
         </P>
         <P>
           Fragmented participation also destroys the model. If only 10% of devices in a dense
@@ -654,7 +654,7 @@ and a node's 8-hop neighborhood contains ~N_8 nodes:
           Pockets of zero density break propagation chains.
         </P>
         <P>
-          Low-concurrency scenarios — a single user verifying transactions in isolation — provide
+          Low-concurrency scenarios, such as a single user verifying transactions in isolation, provide
           no benefit over direct RPC by definition. The mesh is an amortization mechanism. It requires
           multiple devices requesting data about overlapping transaction sets simultaneously.
         </P>
@@ -668,8 +668,8 @@ and a node's 8-hop neighborhood contains ~N_8 nodes:
         <H3>// BLE bandwidth constraints</H3>
         <P>
           BLE 5.0 at 2 Mbps PHY has a theoretical data rate of 1.4 Mbps after protocol overhead.
-          In practice, GATT throughput on a single connection with INDICATE delivery is far lower
-          — the connection interval (typically 7.5–30 ms depending on negotiation), the ATT
+          In practice, GATT throughput on a single connection with INDICATE delivery is far lower.
+          The connection interval (typically 7.5–30 ms depending on negotiation), the ATT
           round-trip requirement, and the OS scheduling of the BLE controller collectively limit
           useful throughput to roughly 20–50 KB/s per connection. For a 500-byte proof, this is
           not a bottleneck. For a mesh node relaying proofs to 4 peers simultaneously, the
@@ -692,8 +692,8 @@ and a node's 8-hop neighborhood contains ~N_8 nodes:
         <P>
           iOS imposes background execution limits on BLE centrals. An iOS app that loses foreground
           priority has its scan intervals stretched by the OS. Discovery times go from 2–5 seconds
-          to potentially 30+ seconds. Proof relay is unaffected for already-connected peers — an
-          established GATT connection remains active in the background — but new peers entering
+          to potentially 30+ seconds. Proof relay is unaffected for already-connected peers: an
+          established GATT connection remains active in the background. But new peers entering
           the venue are discovered much more slowly. The effective connection graph stabilizes more
           slowly on iOS-heavy deployments than on Android-heavy ones.
         </P>
@@ -702,7 +702,7 @@ and a node's 8-hop neighborhood contains ~N_8 nodes:
           bound. On low-end Android devices with older BLE stacks, we have observed INDICATE
           latencies as high as 80–100 ms per fragment. A proof that takes 54 ms to deliver on
           a Pixel 9 can take 240–300 ms on an entry-level device. This stretches T_prop but does
-          not break it — the confirmation window is typically long enough to absorb the difference.
+          not break it. The confirmation window is typically long enough to absorb the difference.
           However, our MAX_PEERS=4 cap was set with this heterogeneity in mind: a slow peer on
           one of the four connections slows down the serialized INDICATE delivery on that link
           but does not block the other three.
@@ -732,7 +732,7 @@ and a node's 8-hop neighborhood contains ~N_8 nodes:
           5+ minutes ago is considered expired. In a venue where the same transaction might be
           queried repeatedly (think a conference with a long networking period after a big NFT
           drop), this TTL creates a window where old proof UUIDs could theoretically re-propagate.
-          In practice this is benign — the proof is still valid — but operators running high-value
+          In practice this is benign; the proof is still valid. But operators running high-value
           deployments should understand that the deduplication cache is time-bounded, not permanent.
         </P>
 
@@ -810,8 +810,8 @@ async verifyTransaction(txSignature, opts):
           Anti-entropy repair is the other element a production hybrid system needs. When a node
           reconnects after an offline period, it has no knowledge of what transactions were
           verified while it was absent. The store-and-forward layer handles the outbound side:
-          queued requests drain when a new peer connects. The inbound side — pulling state from
-          peers on reconnect — is the area where CRDT-assisted synchronization becomes interesting.
+          queued requests drain when a new peer connects. Pulling state from peers on reconnect
+          is the inbound side, and that is where CRDT-assisted synchronization becomes interesting.
           A bloom filter or a summary sketch of recently verified transaction UUIDs, exchanged
           in the HELLO frame on connection establishment, would let reconnecting nodes request
           only the proofs they are missing rather than re-querying everything.
@@ -824,8 +824,8 @@ async verifyTransaction(txSignature, opts):
         <P>
           The current relay model is deterministic: every node that receives a new proof forwards
           it to all connected peers. In very dense networks, this creates quadratic message amplification
-          within fully-connected sub-graphs. Probabilistic forwarding — each node forwards with
-          probability p, tuned to the estimated local density — reduces redundant transmissions
+          within fully-connected sub-graphs. With probabilistic forwarding, each node forwards with
+          probability p tuned to the estimated local density. This reduces redundant transmissions
           while maintaining coverage probability above a target threshold. The optimal p can be
           derived from the local node degree: if a node has k connections and each peer likely has
           k-1 other paths to the proof, a forwarding probability of 1/(k-1) achieves the same
@@ -840,7 +840,7 @@ async verifyTransaction(txSignature, opts):
           T_relay for that hop from 54 ms to approximately 5–10 ms, depending on payload size.
           In a hybrid-transport mesh where WiFi Direct links coexist with BLE links, the effective
           diameter of the graph decreases because high-bandwidth hops propagate faster. The
-          TransportManager already abstracts across both transports — the optimization is in the
+          TransportManager already abstracts across both transports. The optimization is in the
           routing layer, preferring WiFi Direct paths when available.
         </P>
 
@@ -851,8 +851,8 @@ async verifyTransaction(txSignature, opts):
           desktop nodes that currently use raw TCP, QUIC would allow multiple proof streams to
           share a single connection without head-of-line blocking. More importantly, QUIC's
           connection migration property means that a proof exchange started over WiFi completes
-          correctly even if the device switches networks mid-transfer — relevant for mobile nodes
-          with intermittent connectivity.
+          correctly even if the device switches networks mid-transfer, which is relevant for
+          mobile nodes with intermittent connectivity.
         </P>
 
         <H3>// Peer reputation and propagation scoring</H3>
@@ -885,7 +885,7 @@ async verifyTransaction(txSignature, opts):
           Dense venue. High participation rate. Stable connection graph. Query timing distributed
           across a reasonable confirmation window. Where those conditions hold, the proof
           propagation model produces suppression rates in the 62–78% range for networks between
-          50 and 1,000 nodes — consistent with the theoretical prediction and with what we observe
+          50 and 1,000 nodes, consistent with the theoretical prediction and with what we observe
           in simulation.
         </P>
         <P>
@@ -914,8 +914,8 @@ async verifyTransaction(txSignature, opts):
           The most useful property of the mesh is not any specific reduction percentage. It is
           that the reduction <Hi>compounds with density</Hi>. Every additional active Fernlink
           node in a venue increases the coverage fraction, reduces the expected propagation time,
-          and provides an additional potential verifier. The protocol's efficiency is not static —
-          it grows with adoption. Each new peer makes the centralized infrastructure matter
+          and provides an additional potential verifier. The protocol's efficiency is not static.
+          It grows with adoption. Each new peer makes the centralized infrastructure matter
           slightly less, for everyone already in the mesh.
         </P>
 
@@ -933,7 +933,7 @@ async verifyTransaction(txSignature, opts):
             to="/blog/multi-transport"
             className="font-mono text-sm uppercase tracking-widest border border-[#064e3b] text-[#166534] px-5 py-2 inline-block hover:border-[#22C55E] hover:text-[#22C55E] transition-all"
           >
-            [ ← MULTI-TRANSPORT POST ]
+            [ MULTI-TRANSPORT POST ]
           </Link>
           <a
             href="https://t.me/Stranger3145"

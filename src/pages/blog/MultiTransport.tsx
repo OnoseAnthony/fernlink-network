@@ -432,13 +432,13 @@ override fun onCharacteristicChanged(
         </P>
         <ul className="mb-6 space-y-1">
           <Bullet>
-            <Highlight>pk</Highlight> — the peer's Ed25519 public key (hex encoded). This is the cryptographic identity used for proof verification.
+            <Highlight>pk</Highlight>: the peer's Ed25519 public key (hex encoded). This is the cryptographic identity used for proof verification.
           </Bullet>
           <Bullet>
-            <Highlight>ble</Highlight> — the Fernlink GATT service UUID. The receiver uses this to target the correct service during connection without running a full service discovery.
+            <Highlight>ble</Highlight>: the Fernlink GATT service UUID. The receiver uses this to target the correct service during connection without running a full service discovery.
           </Bullet>
           <Bullet>
-            <Highlight>mac</Highlight> — the peer's current BLE MAC address. Optional: if present, the receiver calls <Mono>connectDirect</Mono> immediately. If absent, it falls back to scanning.
+            <Highlight>mac</Highlight>: the peer's current BLE MAC address. Optional. If present, the receiver calls <Mono>connectDirect</Mono> immediately. If absent, it falls back to scanning.
           </Bullet>
         </ul>
         <P>
